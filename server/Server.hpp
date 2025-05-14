@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include "Channel.hpp"
 
 #define MAX_CLIENTS 100
 
@@ -19,6 +20,7 @@ class Server {
         int _server_fd;
         std::vector<pollfd> _poll_fds;
         std::map<int, Client *> _clients;
+        std::map<std::string, Channel *> _channels;
 
         void setupSocket();
         void acceptNewClient();

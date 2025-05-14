@@ -1,6 +1,15 @@
 #include <iostream>
-#include <cstdlib>    // std::atoi
-#include "../server/Server.hpp" // Server sınıfı tanımı
+#include <cstdlib> // atoi
+#include "Server.hpp"
+
+bool isValidPort(const std::string &str)
+{
+    for (size_t i = 0; i < str.size(); ++i)
+        if (!isdigit(str[i]))
+            return false;
+    int port = std::atoi(str.c_str());
+    return port > 0 && port <= 65535;
+}
 
 int main(int argc, char **argv)
 {
@@ -10,23 +19,25 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    int port = std::atoi(argv[1]);
-    if (port <= 0 || port > 65535)
+    std::string portStr = argv[1];
+    std::string password = argv[2];
+
+    if (!isValidPort(portStr))
     {
-        std::cerr << "Geçersiz port numarası. (1 - 65535 arası olmalı)" << std::endl;
+        std::cerr << "Hata: Geçersiz port numarası. 1-65535 aralığında bir değer girin." << std::endl;
         return 1;
     }
 
-    std::string password = argv[2];
+    int port = std::atoi(portStr.c_str());
 
     try
     {
-        Server server(port, password); // Sunucuyu başlat
-        server.run();                  // Sunucuyu döngüye sok
+        Server server(port, password);
+        server.run(); // Ana sunucu döngüsü
     }
     catch (const std::exception &e)
     {
-        std::cerr << "Hata: " << e.what() << std::endl;
+        std::cerr << "Sunucu hatası: " << e.what() << std::endl;
         return 1;
     }
 
