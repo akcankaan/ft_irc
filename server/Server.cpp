@@ -68,6 +68,37 @@ void Server::acceptNewClient()
     std::cout << "Yeni client bağlandı: " << client_fd << std::endl;
 }
 
+void Server::handleJoinCommand(int fd, const std::string &channelName)
+{
+    if (channelName.empty() || channelName[0] != '#')
+    {
+        std::cout << "Geçersiz kanal ismi: " << channelName << std::endl;
+        return;
+    }
+
+    if (_channels.find(channelName) == _channels.end())
+    {
+        _channels[channelName] = new Channel(channelName);
+        std::cout << "Yeni kanal oluşturuldu: " << channelName << std::endl;
+    }
+
+    Channel *channel = _channels[channelName];
+
+    if (!channel->hasMember(fd))
+    {
+        channel->addMember(fd);
+
+        if (channel->getMembers().size() == 1)
+            channel->addOperator(fd);
+
+        std::cout << "Client " << fd << " -> " << channelName << " kanalına katıldı" << std::endl;
+    }
+    else
+    {
+        std::cout << "Client " << fd << " zaten " << channelName << " kanalında." << std::endl;
+    }
+}
+
 void Server::handleClientMessage(int fd)
 {
     char buffer[512];
@@ -130,33 +161,3 @@ void Server::run()
     }
 }
 
-void Server::handleJoinCommand(int fd, const std::string &channelName)
-{
-    if (channelName.empty() || channelName[0] != '#')
-    {
-        std::cout << "Geçersiz kanal ismi: " << channelName << std::endl;
-        return;
-    }
-
-    if (_channels.find(channelName) == _channels.end())
-    {
-        _channels[channelName] = new Channel(channelName);
-        std::cout << "Yeni kanal oluşturuldu: " << channelName << std::endl;
-    }
-
-    Channel *channel = _channels[channelName];
-
-    if (!channel->hasMember(fd))
-    {
-        channel->addMember(fd);
-
-        if (channel->getMembers().size() == 1)
-            channel->addOperator(fd);
-
-        std::cout << "Client " << fd << " -> " << channelName << " kanalına katıldı" << std::endl;
-    }
-    else
-    {
-        std::cout << "Client " << fd << " zaten " << channelName << " kanalında." << std::endl;
-    }
-}

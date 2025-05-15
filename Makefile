@@ -5,8 +5,8 @@ CXXFLAGS = -Wall -Wextra -Werror -std=c++98
 
 # ========== Dosyalar ==========
 SRCS = main.cpp \
-       Server.cpp \
-       Client.cpp
+       server/Server.cpp \
+       client/Client.cpp
 
 OBJS = $(SRCS:.cpp=.o)
 

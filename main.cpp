@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cstdlib> // atoi
-#include "Server.hpp"
+#include "server/Server.hpp"
 
 bool isValidPort(const std::string &str)
 {

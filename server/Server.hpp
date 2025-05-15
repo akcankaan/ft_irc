@@ -9,7 +9,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include "Channel.hpp"
+#include "../channel/Channel.hpp"
+#include "../client/Client.hpp"
 
 #define MAX_CLIENTS 100
 
@@ -30,6 +31,7 @@ class Server {
         Server(int port, const std::string& password);
         ~Server();
         void run();
+        void handleJoinCommand(int fd, const std::string &channelName);
 };
 
 #endif
