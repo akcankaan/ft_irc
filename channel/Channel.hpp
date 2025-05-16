@@ -9,6 +9,8 @@ class Channel {
     private:
         std::string _name;
         std::vector<Client*> _clients;
+        std::string _topic;
+
     public:
         Channel(const std::string &name);
         ~Channel();
@@ -19,6 +21,13 @@ class Channel {
         bool hasClient(Client *client) const;
 
         void broadcast(const std::string &message, Client *sender);
+
+        void removeClient(Client *client);
+        void kickClient(Client *by, Client *target, const std::string &reason);
+        bool isOperator(Client *client) const;
+        void setOperator(Client *client);
+        const std::string &getTopic() const;
+        void setTopic(const std::string &topic);
 };
 
 #endif

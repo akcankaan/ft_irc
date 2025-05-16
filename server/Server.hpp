@@ -27,6 +27,9 @@ class Server {
         
         void run();
         Channel* getOrCreateChannel(const std::string &name);
+        std::map<std::string, Channel*> &getChannelMap();
+        const std::map<int, Client*> &getClientMap() const;
+
 };
 
 #endif

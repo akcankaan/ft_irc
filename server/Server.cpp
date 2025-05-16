@@ -134,3 +134,11 @@ void Server::removeClient(int client_fd) {
         }
     }
 }
+
+std::map<std::string, Channel*> &Server::getChannelMap() {
+    return _channels;
+}
+
+const std::map<int, Client*> &Server::getClientMap() const {
+    return _clients;
+}

@@ -13,8 +13,13 @@ const std::string &Channel::getName() const {
 }
 
 void Channel::addClient(Client *client) {
-    if (!hasClient(client))
+    if (!hasClient(client)) {
         _clients.push_back(client);
+
+        // Eğer bu kanalda ilk kullanıcıysa, operator yap
+        if (_clients.size() == 1)
+            setOperator(client);
+    }
 }
 
 bool Channel::hasClient(Client *client) const {
@@ -32,3 +37,47 @@ void Channel::broadcast(const std::string &message, Client *sender) {
         }
     }
 }
+
+static std::string buildKickMsg(Client *from, const std::string &channel, Client *target, const std::string &reason) {
+    return ":" + from->getNickname() + " KICK " + channel + " " + target->getNickname() + " :" + reason + "\r\n";
+}
+
+void Channel::removeClient(Client *client) {
+    for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if (*it == client) {
+            _clients.erase(it);
+            break;
+        }
+    }
+}
+
+void Channel::kickClient(Client *by, Client *target, const std::string &reason) {
+    if (!isOperator(by)) {
+        send(by->getFd(), "You are not channel operator\r\n", 31, 0);
+        return;
+    }
+
+    if (!hasClient(target)) {
+        send(by->getFd(), "Target not in channel\r\n", 24, 0);
+        return;
+    }
+
+    std::string msg = buildKickMsg(by, _name, target, reason);
+    broadcast(msg, NULL);
+    removeClient(target);
+
+    send(target->getFd(), msg.c_str(), msg.length(), 0);
+}
+
+bool Channel::isOperator(Client *client) const {
+    return !_clients.empty() && _clients[0] == client;
+}
+
+void Channel::setOperator(Client *client) {
+    if (_clients.empty())
+        _clients.push_back(client);
+}
+
+const std::string &Channel::getTopic() const { return _topic; }
+
+void Channel::setTopic(const std::string &topic) { _topic = topic; }
