@@ -3,6 +3,8 @@
 
 #include <string>
 
+class Server;
+
 class Client {
     private:
         int _fd;
@@ -10,22 +12,32 @@ class Client {
         std::string _username;
         std::string _realname;
         std::string _hostname;
-        bool _authenticated;
         std::string _buffer;
+        bool    _isAuthenticated;
+        bool    _hasGivenPassword;
+
+        Server* _server;
+    
     public:
         Client(int fd);
+        ~Client();
 
         int getFd() const;
-        const std::string& getNickname() const;
-        const std::string& getUsername() const;
-        const std::string& getRealname() const;
-        bool isAuthenticated() const;
-        std::string& getBuffer();
+        const std::string &getNickname() const;
+        const std::string &getUsername() const;
+        const std::string &getBuffer() const;
+        bool    isAuthenticated() const;
 
-        void setNickname(const std::string& nick);
-        void setUsername(const std::string& user);
-        void setRealname(const std::string& real);
-        void setAuthenticated(bool status);
+        void    setNickname(const std::string &nick);
+        void    setUsername(const std::string &user);
+        void    appendBuffer(const std::string &data);
+        void    clearBuffer();
+        void    authenticate();
+        bool hasGivenPassword() const;
+        void markPasswordGiven();
+
+        void setServer(Server *server);
+        Server *getServer() const;
 };
 
 #endif

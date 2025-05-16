@@ -1,37 +1,32 @@
 #ifndef SERVER_HPP
 #define SERVER_HPP
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <map>
-#include <poll.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include "../channel/Channel.hpp"
 #include "../client/Client.hpp"
-
-#define MAX_CLIENTS 100
+#include "../commands/CommandHandler.hpp"
+#include "../channel/Channel.hpp"
+#include <map>
+#include <vector>
+#include <poll.h>
 
 class Server {
     private:
         int _port;
         std::string _password;
-        int _server_fd;
-        std::vector<pollfd> _poll_fds;
-        std::map<int, Client *> _clients;
-        std::map<std::string, Channel *> _channels;
 
-        void setupSocket();
-        void acceptNewClient();
-        void handleClientMessage(int fd);
-        void removeClient(int fd);
+        int _serverSocket;
+        std::map<int, Client*> _clients;
+        std::vector<struct pollfd> _pollFds;
+        std::map<std::string, Channel*> _channels;
+
+        void addClient(int client_fd);
+        void removeClient(int client_fd);
+
     public:
         Server(int port, const std::string& password);
         ~Server();
+        
         void run();
-        void handleJoinCommand(int fd, const std::string &channelName);
+        Channel* getOrCreateChannel(const std::string &name);
 };
 
 #endif

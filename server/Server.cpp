@@ -1,163 +1,136 @@
 #include "Server.hpp"
+#include <iostream>
+#include <stdexcept>     // std::runtime_error
+#include <cstring>       // memset
+#include <cstdlib>       // atoi, etc.
+#include <unistd.h>      // close
+#include <fcntl.h>       // fcntl
+#include <poll.h>        // poll
+#include <sys/socket.h>  // socket, bind, listen, accept
+#include <netinet/in.h>  // sockaddr_in
+#include <arpa/inet.h>   // inet_ntoa, etc.
 
 Server::Server(int port, const std::string &password)
-    : _port(port), _password(password), _server_fd(-1)
-{
-    setupSocket();
+    : _port(port), _password(password) {
+    std::cout << "Server initialized with port: " << _port
+              << " and password: " << _password << std::endl;
 }
 
-Server::~Server()
-{
-    close(_server_fd);
-    for (size_t i = 0; i < _poll_fds.size(); ++i)
-        close(_poll_fds[i].fd);
-
-    for (std::map<std::string, Channel *>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-        delete it->second;
-    _channels.clear();
-
-    for (std::map<int, Client *>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-        delete it->second;
-    _clients.clear();
+Server::~Server() {
+    std::cout << "Server shutting down." << std::endl;
 }
 
-void Server::setupSocket()
-{
-    _server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (_server_fd < 0)
-        throw std::runtime_error("Socket oluşturulamadı");
+Channel* Server::getOrCreateChannel(const std::string &name) {
+    if (_channels.find(name) == _channels.end()) {
+        _channels[name] = new Channel(name);
+        std::cout << "Channel created: " << name << std::endl;
+    }
+    return _channels[name];
+}
 
-    fcntl(_server_fd, F_SETFL, O_NONBLOCK);
+void Server::run() {
+    _serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (_serverSocket < 0)
+        throw std::runtime_error("Socket creation failed");
+
+    int opt = 1;
+    if (setsockopt(_serverSocket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        throw std::runtime_error("setsockopt failed");
+
+    if (fcntl(_serverSocket, F_SETFL, O_NONBLOCK) < 0)
+        throw std::runtime_error("fcntl failed");
 
     sockaddr_in server_addr;
+    std::memset(&server_addr, 0, sizeof(server_addr));
     server_addr.sin_family = AF_INET;
     server_addr.sin_addr.s_addr = INADDR_ANY;
     server_addr.sin_port = htons(_port);
 
-    if (bind(_server_fd, (sockaddr *)&server_addr, sizeof(server_addr)) < 0)
-        throw std::runtime_error("Bind başarısız");
+    if (bind(_serverSocket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0)
+        throw std::runtime_error("Bind failed");
 
-    if (listen(_server_fd, MAX_CLIENTS) < 0)
-        throw std::runtime_error("Listen başarısız");
+    if (listen(_serverSocket, 10) < 0)
+        throw std::runtime_error("Listen failed");
 
-    pollfd pfd;
-    pfd.fd = _server_fd;
-    pfd.events = POLLIN;
-    _poll_fds.push_back(pfd);
+    std::cout << "Server listening on port " << _port << std::endl;
 
-    std::cout << "Server " << _port << " portunda dinliyor..." << std::endl;
+    _pollFds.clear();
+    struct pollfd serverPollFd = { _serverSocket, POLLIN, 0 };
+    _pollFds.push_back(serverPollFd);
+
+    while (true) {
+        int pollResult = poll(&_pollFds[0], _pollFds.size(), -1);
+        if (pollResult < 0)
+            throw std::runtime_error("Poll failed");
+
+        for (size_t i = 0; i < _pollFds.size(); ++i) {
+            int fd = _pollFds[i].fd;
+
+            if (_pollFds[i].revents & POLLIN) {
+                // Yeni bağlantı
+                if (fd == _serverSocket) {
+                    sockaddr_in client_addr;
+                    socklen_t client_len = sizeof(client_addr);
+                    int client_fd = accept(_serverSocket, (sockaddr *)&client_addr, &client_len);
+                    if (client_fd >= 0)
+                        addClient(client_fd);
+                }
+                // Veri geldi
+                else {
+                    char buffer[512];
+                    std::memset(buffer, 0, sizeof(buffer));
+                    ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0);
+
+                    if (bytes <= 0) {
+                        removeClient(fd);
+                    } else {
+                        Client *client = _clients[fd];
+                        client->appendBuffer(std::string(buffer, bytes));
+
+                        std::string &full = const_cast<std::string&>(client->getBuffer());
+                        size_t pos;
+                        while ((pos = full.find("\n")) != std::string::npos) {
+                            std::string line = full.substr(0, pos);
+                            if (!line.empty() && line[line.size() - 1] == '\r')
+                                line.erase(line.size() - 1);
+                            CommandHandler::handleCommand(client, line);
+                            full.erase(0, pos + 1);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    close(_serverSocket);
 }
 
-void Server::acceptNewClient()
-{
-    sockaddr_in client_addr;
-    socklen_t client_len = sizeof(client_addr);
-    int client_fd = accept(_server_fd, (sockaddr *)&client_addr, &client_len);
-    if (client_fd < 0)
-        return;
-
+void Server::addClient(int client_fd) {
     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-    pollfd pfd;
+    Client* newClient = new Client(client_fd);
+    newClient->setServer(this); // ✨ Burada
+    _clients[client_fd] = newClient;
+
+    struct pollfd pfd;
     pfd.fd = client_fd;
     pfd.events = POLLIN;
-    _poll_fds.push_back(pfd);
+    _pollFds.push_back(pfd);
 
-    _clients[client_fd] = new Client(client_fd);
-
-    std::cout << "Yeni client bağlandı: " << client_fd << std::endl;
+    std::cout << "Client added: " << client_fd << std::endl;
 }
 
-void Server::handleJoinCommand(int fd, const std::string &channelName)
-{
-    if (channelName.empty() || channelName[0] != '#')
-    {
-        std::cout << "Geçersiz kanal ismi: " << channelName << std::endl;
-        return;
-    }
+void Server::removeClient(int client_fd) {
+    std::cout << "Client removed: " << client_fd << std::endl;
 
-    if (_channels.find(channelName) == _channels.end())
-    {
-        _channels[channelName] = new Channel(channelName);
-        std::cout << "Yeni kanal oluşturuldu: " << channelName << std::endl;
-    }
+    close(client_fd);
+    delete _clients[client_fd];
+    _clients.erase(client_fd);
 
-    Channel *channel = _channels[channelName];
-
-    if (!channel->hasMember(fd))
-    {
-        channel->addMember(fd);
-
-        if (channel->getMembers().size() == 1)
-            channel->addOperator(fd);
-
-        std::cout << "Client " << fd << " -> " << channelName << " kanalına katıldı" << std::endl;
-    }
-    else
-    {
-        std::cout << "Client " << fd << " zaten " << channelName << " kanalında." << std::endl;
-    }
-}
-
-void Server::handleClientMessage(int fd)
-{
-    char buffer[512];
-    int bytes = recv(fd, buffer, sizeof(buffer) - 1, 0);
-    if (bytes <= 0)
-    {
-        std::cout << "Client ayrıldı: " << fd << std::endl;
-        removeClient(fd);
-        return;
-    }
-
-    buffer[bytes] = '\0';
-    std::cout << "Client " << fd << " mesaj: " << buffer;
-
-    std::string msg(buffer);
-
-    // Basit bir JOIN komutu kontrolü örneği:
-    if (msg.find("JOIN ") == 0)
-    {
-        std::string channelName = msg.substr(5);
-        if (!channelName.empty() && channelName[channelName.size() - 1] == '\n')
-            channelName.erase(channelName.size() - 1); // \n sil
-        handleJoinCommand(fd, channelName);
-    }
-}
-
-void Server::removeClient(int fd)
-{
-    close(fd);
-    delete _clients[fd];
-    _clients.erase(fd);
-
-    for (std::vector<pollfd>::iterator it = _poll_fds.begin(); it != _poll_fds.end(); ++it)
-    {
-        if (it->fd == fd)
-        {
-            _poll_fds.erase(it);
+    for (std::vector<struct pollfd>::iterator it = _pollFds.begin(); it != _pollFds.end(); ++it) {
+        if (it->fd == client_fd) {
+            _pollFds.erase(it);
             break;
         }
     }
 }
-
-void Server::run()
-{
-    while (true)
-    {
-        if (poll(&_poll_fds[0], _poll_fds.size(), -1) < 0)
-            throw std::runtime_error("poll() başarısız");
-
-        for (size_t i = 0; i < _poll_fds.size(); ++i)
-        {
-            if (_poll_fds[i].revents & POLLIN)
-            {
-                if (_poll_fds[i].fd == _server_fd)
-                    acceptNewClient();
-                else
-                    handleClientMessage(_poll_fds[i].fd);
-            }
-        }
-    }
-}
-
