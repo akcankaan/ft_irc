@@ -4,12 +4,14 @@
 #include "../client/Client.hpp"
 #include <string>
 #include <vector>
+#include <set>
 
 class Channel {
     private:
         std::string _name;
         std::vector<Client*> _clients;
         std::string _topic;
+        std::set<std::string> _invited;
 
     public:
         Channel(const std::string &name);
@@ -28,6 +30,8 @@ class Channel {
         void setOperator(Client *client);
         const std::string &getTopic() const;
         void setTopic(const std::string &topic);
+        void inviteClient(Client *target);
+        bool isInvited(const Client *client) const;
 };
 
 #endif

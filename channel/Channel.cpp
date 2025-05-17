@@ -81,3 +81,11 @@ void Channel::setOperator(Client *client) {
 const std::string &Channel::getTopic() const { return _topic; }
 
 void Channel::setTopic(const std::string &topic) { _topic = topic; }
+
+void Channel::inviteClient(Client *target) {
+    _invited.insert(target->getNickname());
+}
+
+bool Channel::isInvited(const Client *client) const {
+    return _invited.find(client->getNickname()) != _invited.end();
+}

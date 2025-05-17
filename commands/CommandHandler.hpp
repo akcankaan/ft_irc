@@ -4,6 +4,7 @@
 #include "../client/Client.hpp"
 #include <string>
 #include <map>
+#include <set>
 
 class CommandHandler {
     public:

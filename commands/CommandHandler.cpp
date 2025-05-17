@@ -147,6 +147,43 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         std::string notify = ":" + client->getNickname() + " TOPIC " + chanName + " :" + newTopic + "\r\n";
         channel->broadcast(notify, NULL);
         std::cout << "Topic of " << chanName << " set to:" << newTopic << std::endl;
+    } else if (command == "INVITE") {
+            std::string nick, chanName;
+            iss >> nick >> chanName;
+
+            if (nick.empty() || chanName.empty()) {
+                send(client->getFd(), "INVITE syntax: INVITE <nick> <#channel>\r\n", 43, 0);
+                return;
+            }
+
+            Server *server = client->getServer();
+            Channel *channel = server->getChannelMap()[chanName];
+            if (!channel) {
+                send(client->getFd(), "Channel not found\r\n", 20, 0);
+                return;
+            }
+
+            if (!channel->isOperator(client)) {
+                send(client->getFd(), "You are not channel operator\r\n", 31, 0);
+                return;
+            }
+
+            Client *target = NULL;
+            const std::map<int, Client*> &clients = server->getClientMap();
+            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second->getNickname() == nick) {
+                    target = it->second;
+                    break;
+                }
+            }
+
+            channel->inviteClient(target);
+            
+            std::string notice = ":" + client->getNickname() + " INVITE " + nick + " :" + chanName + "\r\n";
+            send(target->getFd(), notice.c_str(), notice.length(), 0);
+            send(client->getFd(), "User invited\r\n", 15, 0);
+
+            std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
     } else {
         std::cout << "Unknown command from client " << client->getFd() << ": " << raw << std::endl;
     }
