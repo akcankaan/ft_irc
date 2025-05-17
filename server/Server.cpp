@@ -106,19 +106,24 @@ void Server::run() {
 }
 
 void Server::addClient(int client_fd) {
+    // Socket'i non-blocking moda al
     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
+    // Yeni client oluştur
     Client* newClient = new Client(client_fd);
-    newClient->setServer(this); // ✨ Burada
+    newClient->setServer(this);  // Server referansı ver
     _clients[client_fd] = newClient;
 
+    // pollfd yapılandırması (DİKKAT: revents sıfırlanmalı!)
     struct pollfd pfd;
     pfd.fd = client_fd;
     pfd.events = POLLIN;
+    pfd.revents = 0;  // ✅ uninitialized uyarılarını engeller
     _pollFds.push_back(pfd);
 
     std::cout << "Client added: " << client_fd << std::endl;
 }
+
 
 void Server::removeClient(int client_fd) {
     std::cout << "Client removed: " << client_fd << std::endl;

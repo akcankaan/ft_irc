@@ -12,6 +12,8 @@ class Channel {
         std::vector<Client*> _clients;
         std::string _topic;
         std::set<std::string> _invited;
+        bool _inviteOnly;
+        std::string _password;
 
     public:
         Channel(const std::string &name);
@@ -32,6 +34,12 @@ class Channel {
         void setTopic(const std::string &topic);
         void inviteClient(Client *target);
         bool isInvited(const Client *client) const;
+        void setInviteOnly(bool enabled);
+        bool isInviteOnly() const;
+        void setPassword(const std::string &pass);
+        void clearPassword();
+        const std::string &getPassword() const;
+        bool hasPassword() const;
 };
 
 #endif

@@ -47,6 +47,24 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
         Server *server = client->getServer();
         Channel *channel = server->getOrCreateChannel(chanName);
+
+        std::string joinPassword;
+        iss >> joinPassword;
+
+        // 🔒 invite-only kontrolü
+        if (channel->isInviteOnly() && !channel->isInvited(client)) {
+            send(client->getFd(), "Channel is invite-only\r\n", 26, 0);
+            return;
+        }
+
+        // 🔑 şifre kontrolü
+        if (channel->hasPassword()) {
+            if (joinPassword != channel->getPassword()) {
+                send(client->getFd(), "Incorrect channel password\r\n", 29, 0);
+                return;
+            }
+        }
+
         channel->addClient(client);
 
         std::cout << "Client " << client->getFd() << " joined " << chanName << std::endl;
@@ -184,6 +202,58 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             send(client->getFd(), "User invited\r\n", 15, 0);
 
             std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
+    } else if (command == "MODE") {
+    std::string chanName, modeStr;
+    iss >> chanName >> modeStr;
+
+    if (chanName.empty() || modeStr.empty()) {
+        send(client->getFd(), "Usage: MODE <#channel> [+/-mode]\r\n", 35, 0);
+        return;
+    }
+
+    Server *server = client->getServer();
+    std::map<std::string, Channel*> &channels = server->getChannelMap();
+
+    // ✅ Kanal var mı kontrolü
+    if (channels.find(chanName) == channels.end()) {
+        send(client->getFd(), "Channel not found\r\n", 20, 0);
+        return;
+    }
+
+    Channel *channel = channels[chanName];
+
+    // ✅ Kullanıcı operatör mü?
+    if (!channel->isOperator(client)) {
+        send(client->getFd(), "You are not channel operator\r\n", 31, 0);
+        return;
+    }
+
+    // ✅ Mod işlemleri
+    if (modeStr == "+i") {
+        channel->setInviteOnly(true);
+        send(client->getFd(), "Invite-only mode set (+i)\r\n", 28, 0);
+    } else if (modeStr == "-i") {
+        channel->setInviteOnly(false);
+        send(client->getFd(), "Invite-only mode removed (-i)\r\n", 33, 0);
+    } else if (modeStr == "+k") {
+        std::string key;
+        iss >> key;
+
+            if (key.empty()) {
+                send(client->getFd(), "Password required for +k\r\n", 27, 0);
+                return;
+            }
+
+            channel->setPassword(key);
+            send(client->getFd(), "Channel password set (+k)\r\n", 28, 0);
+        }
+        else if (modeStr == "-k") {
+            channel->clearPassword();
+            send(client->getFd(), "Channel password removed (-k)\r\n", 32, 0);
+        }
+        else {
+            send(client->getFd(), "Unsupported MODE\r\n", 19, 0);
+        }
     } else {
         std::cout << "Unknown command from client " << client->getFd() << ": " << raw << std::endl;
     }

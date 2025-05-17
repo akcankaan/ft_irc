@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 
 Channel::Channel(const std::string &name)
-    : _name(name) {}
+    : _name(name), _inviteOnly(false) {}
 
 Channel::~Channel() {}
 
@@ -89,3 +89,15 @@ void Channel::inviteClient(Client *target) {
 bool Channel::isInvited(const Client *client) const {
     return _invited.find(client->getNickname()) != _invited.end();
 }
+
+void Channel::setInviteOnly(bool enabled) { _inviteOnly = enabled; }
+
+bool Channel::isInviteOnly() const { return _inviteOnly; }
+
+void Channel::setPassword(const std::string &pass) { _password = pass; }
+
+void Channel::clearPassword() { _password.clear(); }
+
+const std::string &Channel::getPassword() const { return _password; }
+
+bool Channel::hasPassword() const { return !_password.empty(); }
