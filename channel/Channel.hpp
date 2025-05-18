@@ -14,6 +14,9 @@ class Channel {
         std::set<std::string> _invited;
         bool _inviteOnly;
         std::string _password;
+        int _userLimit;
+        bool _hasUserLimit;
+        std::set<std::string> _operators;
 
     public:
         Channel(const std::string &name);
@@ -40,6 +43,12 @@ class Channel {
         void clearPassword();
         const std::string &getPassword() const;
         bool hasPassword() const;
+        void setUserLimit(int limit);
+        void clearUserLimit();
+        bool hasUserLimit() const;
+        bool isFull() const;
+        void addOperator(Client *client);
+        void removeOperator(Client *client);
 };
 
 #endif

@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <sys/socket.h>
+#include <cstdlib>
 
 void CommandHandler::handleCommand(Client *client, const std::string &raw) {
     std::istringstream iss(raw);
@@ -63,6 +64,12 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
                 send(client->getFd(), "Incorrect channel password\r\n", 29, 0);
                 return;
             }
+        }
+
+        // 🔒 Kullanıcı limiti kontrolü
+        if (channel->isFull()) {
+            send(client->getFd(), "Channel is full\r\n", 18, 0);
+            return;
         }
 
         channel->addClient(client);
@@ -203,41 +210,41 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
             std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
     } else if (command == "MODE") {
-    std::string chanName, modeStr;
-    iss >> chanName >> modeStr;
+        std::string chanName, modeStr;
+        iss >> chanName >> modeStr;
 
-    if (chanName.empty() || modeStr.empty()) {
-        send(client->getFd(), "Usage: MODE <#channel> [+/-mode]\r\n", 35, 0);
-        return;
-    }
+        if (chanName.empty() || modeStr.empty()) {
+            send(client->getFd(), "Usage: MODE <#channel> [+/-mode]\r\n", 35, 0);
+            return;
+        }
 
-    Server *server = client->getServer();
-    std::map<std::string, Channel*> &channels = server->getChannelMap();
+        Server *server = client->getServer();
+        std::map<std::string, Channel*> &channels = server->getChannelMap();
 
-    // ✅ Kanal var mı kontrolü
-    if (channels.find(chanName) == channels.end()) {
-        send(client->getFd(), "Channel not found\r\n", 20, 0);
-        return;
-    }
+        // ✅ Kanal var mı kontrolü
+        if (channels.find(chanName) == channels.end()) {
+            send(client->getFd(), "Channel not found\r\n", 20, 0);
+            return;
+        }
 
-    Channel *channel = channels[chanName];
+        Channel *channel = channels[chanName];
 
-    // ✅ Kullanıcı operatör mü?
-    if (!channel->isOperator(client)) {
-        send(client->getFd(), "You are not channel operator\r\n", 31, 0);
-        return;
-    }
+        // ✅ Kullanıcı operatör mü?
+        if (!channel->isOperator(client)) {
+            send(client->getFd(), "You are not channel operator\r\n", 31, 0);
+            return;
+        }
 
-    // ✅ Mod işlemleri
-    if (modeStr == "+i") {
-        channel->setInviteOnly(true);
-        send(client->getFd(), "Invite-only mode set (+i)\r\n", 28, 0);
-    } else if (modeStr == "-i") {
-        channel->setInviteOnly(false);
-        send(client->getFd(), "Invite-only mode removed (-i)\r\n", 33, 0);
-    } else if (modeStr == "+k") {
-        std::string key;
-        iss >> key;
+        // ✅ Mod işlemleri
+        if (modeStr == "+i") {
+            channel->setInviteOnly(true);
+            send(client->getFd(), "Invite-only mode set (+i)\r\n", 28, 0);
+        } else if (modeStr == "-i") {
+            channel->setInviteOnly(false);
+            send(client->getFd(), "Invite-only mode removed (-i)\r\n", 33, 0);
+        } else if (modeStr == "+k") {
+            std::string key;
+            iss >> key;
 
             if (key.empty()) {
                 send(client->getFd(), "Password required for +k\r\n", 27, 0);
@@ -250,8 +257,73 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         else if (modeStr == "-k") {
             channel->clearPassword();
             send(client->getFd(), "Channel password removed (-k)\r\n", 32, 0);
-        }
-        else {
+        } else if (modeStr == "+l") {
+            std::string limitStr;
+            iss >> limitStr;
+
+            int limit = std::atoi(limitStr.c_str());
+            if (limit <= 0) {
+                send(client->getFd(), "Invalid limit\r\n", 15, 0);
+                return;
+            }
+
+            channel->setUserLimit(limit);
+            send(client->getFd(), "User limit set (+1)\r\n", 22, 0);
+        } else if (modeStr == "-l") {
+            channel->clearUserLimit();
+            send(client->getFd(), "User limit removed (-l)\r\n", 26, 0);
+        } else if (modeStr == "+o") {
+            std::string nick;
+            iss >> nick;
+
+            if (nick.empty()) {
+                send(client->getFd(), "Nickname required for +o\r\n", 27, 0);
+                return;
+            }
+
+            const std::map<int, Client*> &clients = server->getClientMap();
+            Client *target = NULL;
+            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second->getNickname() == nick) {
+                    target = it->second;
+                    break;
+                }
+            }
+
+            if (!target || !channel->hasClient(target)) {
+                send(client->getFd(), "Target user not in channel\r\n", 29, 0);
+                return;
+            }
+
+            channel->addOperator(target);
+            send(client->getFd(), "Operator privilege granted (+o)\r\n", 33, 0);
+        } else if (modeStr == "-o") {
+            std::string nick;
+            iss >> nick;
+
+            if (nick.empty()) {
+                send(client->getFd(), "Nickname required for -o\r\n", 27, 0);
+                return;
+            }
+
+            const std::map<int, Client*> &clients = server->getClientMap();
+            Client *target = NULL;
+
+            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second->getNickname() == nick) {
+                target = it->second;
+                break;
+                }
+            }
+
+            if (!target || !channel->hasClient(target)) {
+                send(client->getFd(), "Target user not in channel\r\n", 29, 0);
+                return;
+            }
+
+            channel->removeOperator(target);
+            send(client->getFd(), "Operator privilege revoked (-o)\r\n", 34, 0);
+        } else {
             send(client->getFd(), "Unsupported MODE\r\n", 19, 0);
         }
     } else {

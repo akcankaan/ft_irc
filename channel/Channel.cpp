@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 
 Channel::Channel(const std::string &name)
-    : _name(name), _inviteOnly(false) {}
+    : _name(name), _inviteOnly(false), _userLimit(0), _hasUserLimit(false) {}
 
 Channel::~Channel() {}
 
@@ -101,3 +101,21 @@ void Channel::clearPassword() { _password.clear(); }
 const std::string &Channel::getPassword() const { return _password; }
 
 bool Channel::hasPassword() const { return !_password.empty(); }
+
+void Channel::setUserLimit(int limit) {
+    _userLimit = limit;
+    _hasUserLimit = true;
+}
+
+void Channel::clearUserLimit() {
+    _userLimit = 0;
+    _hasUserLimit = false;
+}
+
+bool Channel::hasUserLimit() const { return _hasUserLimit; }
+
+bool Channel::isFull() const { return _hasUserLimit && static_cast<int>(_clients.size()) >= _userLimit; }
+
+void Channel::addOperator(Client *client) { _operators.insert(client->getNickname()); }
+
+void Channel::removeOperator(Client *client) { _operators.erase(client->getNickname()); }
