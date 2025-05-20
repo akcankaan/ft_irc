@@ -79,29 +79,61 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         std::string target;
         iss >> target;
 
-        std::string message;
-        std::getline(iss, message);
-        if (!message.empty() && message[0] == ' ')
-            message.erase(0, 1);
+        std::string msg;
+        std::getline(iss, msg);
 
-        if (target.empty() || message.empty()) {
-            std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;
+        // Trim baştaki boşluklar
+        if (!msg.empty() && msg[0] == ' ')
+            msg.erase(0, 1);
+        if (!msg.empty() && msg[0] == ':')
+            msg.erase(0, 1);
+
+        if (target.empty() || msg.empty()) {
+            send(client->getFd(), "Invalid PRIVMSG syntax\r\n", 25, 0);
             return;
         }
 
         Server *server = client->getServer();
         std::map<std::string, Channel*> &channels = server->getChannelMap();
-        
-        if (channels.find(target) == channels.end()) {
-            std::cout << "Channel not found: " << target << std::endl;
-            return;
-        }
 
-        Channel *channel = channels[target];
-        std::string fullMessage = ":" + client->getNickname() + " PRIVMSG " + target + " :" + message + "\r\n";
-        channel->broadcast(fullMessage, client);
-        
-        std::cout << "Client " << client->getFd() << " sent to " << target << ": " << message << std::endl;
+        // 🔁 Kanal mesajı mı, özel mesaj mı?
+        if (target[0] == '#') {
+            if (channels.find(target) == channels.end()) {
+                send(client->getFd(), "Channel not found\r\n", 20, 0);
+                return;
+            }
+
+            Channel *channel = channels[target];
+
+            if (!channel->hasClient(client)) {
+                std::string err = ": 404 " + client->getNickname() + " " + target + " :Cannot send to channel\r\n";
+                send(client->getFd(), err.c_str(), err.length(), 0);
+                return;
+            }
+
+            std::string out = ":" + client->getNickname() + " PRIVMSG " + target + " :" + msg + "\r\n";
+            channel->broadcast(out, client); // diğer herkese gönder
+        }
+        else {
+            const std::map<int, Client*> &clients = server->getClientMap();
+            Client *targetClient = NULL;
+
+            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
+                if (it->second->getNickname() == target) {
+                    targetClient = it->second;
+                    break;
+                }
+            }
+
+            if (!targetClient) {
+                std::string err = ": 401 " + client->getNickname() + " " + target + " :No such nick\r\n";
+                send(client->getFd(), err.c_str(), err.length(), 0);
+                return;
+            }
+
+            std::string out = ":" + client->getNickname() + " PRIVMSG " + target + " :" + msg + "\r\n";
+            send(targetClient->getFd(), out.c_str(), out.length(), 0);
+        }
     } else if (command == "KICK") {
         std::string chanName, targetNick;
         iss >> chanName >> targetNick;
@@ -128,7 +160,7 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
                 break;
             }
         }
-        
+
         if (!target) {
             std::cout << "Target not found: " << targetNick << std::endl;
             return;
@@ -156,7 +188,7 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         std::getline(iss, newTopic);
         if (!newTopic.empty() && newTopic[0] == ' ')
             newTopic.erase(0, 1);
-        
+
         if (newTopic.empty()) {
             std::string response = "Current topic: " + channel->getTopic() + "\r\n";
             send(client->getFd(), response.c_str(), response.length(), 0);
@@ -168,7 +200,7 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         }
 
         channel->setTopic(newTopic);
-        
+
         std::string notify = ":" + client->getNickname() + " TOPIC " + chanName + " :" + newTopic + "\r\n";
         channel->broadcast(notify, NULL);
         std::cout << "Topic of " << chanName << " set to:" << newTopic << std::endl;
@@ -203,7 +235,7 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             }
 
             channel->inviteClient(target);
-            
+
             std::string notice = ":" + client->getNickname() + " INVITE " + nick + " :" + chanName + "\r\n";
             send(target->getFd(), notice.c_str(), notice.length(), 0);
             send(client->getFd(), "User invited\r\n", 15, 0);
