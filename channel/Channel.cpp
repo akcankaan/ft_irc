@@ -129,3 +129,7 @@ void Channel::setTopicRestrict(bool value) {
 bool Channel::isTopicRestricted() const {
     return topicRestrict;
 }
+
+const std::vector<Client*> &Channel::getClients() const {
+    return _clients;
+}

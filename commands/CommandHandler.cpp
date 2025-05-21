@@ -42,15 +42,12 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         iss >> chanName;
 
         if (chanName.empty() || chanName[0] != '#') {
-            std::cout << "Client " << client->getFd() << " tried invalid channel name." << std::endl;
+            send(client->getFd(), "Invalid channel name\r\n", 23, 0);
             return;
         }
 
         Server *server = client->getServer();
         Channel *channel = server->getOrCreateChannel(chanName);
-
-        std::string joinPassword;
-        iss >> joinPassword;
 
         // 🔒 invite-only kontrolü
         if (channel->isInviteOnly() && !channel->isInvited(client)) {
@@ -58,7 +55,9 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             return;
         }
 
-        // 🔑 şifre kontrolü
+        // 🔒 şifre kontrolü
+        std::string joinPassword;
+        iss >> joinPassword;
         if (channel->hasPassword()) {
             if (joinPassword != channel->getPassword()) {
                 send(client->getFd(), "Incorrect channel password\r\n", 29, 0);
@@ -66,32 +65,37 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             }
         }
 
-        // 🔒 Kullanıcı limiti kontrolü
+        // 🔒 kullanıcı limiti kontrolü
         if (channel->isFull()) {
             send(client->getFd(), "Channel is full\r\n", 18, 0);
             return;
         }
 
+        // ✅ kanala ekle
         channel->addClient(client);
-        // Bağlantı bilgileri
-        std::string nick = client->getNickname();
-        std::string chan = chanName;
-        std::string fdJoinMsg = ":" + nick + "!" + client->getUsername() + "@localhost JOIN :" + chan + "\r\n";
-        send(client->getFd(), fdJoinMsg.c_str(), fdJoinMsg.size(), 0);
 
-        std::string topicMsg = ":ircserv 332 " + nick + " " + chan + " :Welcome to " + chan + "\r\n";
-        send(client->getFd(), topicMsg.c_str(), topicMsg.size(), 0);
-
-        std::string nameListMsg = ":ircserv 353 " + nick + " = " + chan + " :" + nick + "\r\n";
-        send(client->getFd(), nameListMsg.c_str(), nameListMsg.size(), 0);
-
-        std::string endOfNamesMsg = ":ircserv 366 " + nick + " " + chan + " :End of /NAMES list.\r\n";
-        send(client->getFd(), endOfNamesMsg.c_str(), endOfNamesMsg.size(), 0);
-
-        std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
-        channel->broadcast(joinMsg, NULL); // kendisi de dahil tüm client'lara
-        client->setReady(true);
         std::cout << "Client " << client->getFd() << " joined " << chanName << std::endl;
+
+        // ✅ JOIN bildirimi (herkese)
+        std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
+        channel->broadcast(joinMsg, NULL); // herkes görsün (gönderen dahil)
+
+        // ✅ TOPIC bilgisi
+        std::string topicMsg = ":ircserv 332 " + client->getNickname() + " " + chanName + " :" + channel->getTopic() + "\r\n";
+        send(client->getFd(), topicMsg.c_str(), topicMsg.length(), 0);
+
+        // ✅ NAMES listesi
+        std::string nameList = ":ircserv 353 " + client->getNickname() + " = " + chanName + " :";
+        const std::vector<Client*> &clients = channel->getClients();
+        for (size_t i = 0; i < clients.size(); ++i) {
+            nameList += clients[i]->getNickname() + " ";
+        }
+        nameList += "\r\n";
+        send(client->getFd(), nameList.c_str(), nameList.length(), 0);
+
+        // ✅ NAMES bitiş bildirimi
+        std::string endNames = ":ircserv 366 " + client->getNickname() + " " + chanName + " :End of /NAMES list.\r\n";
+        send(client->getFd(), endNames.c_str(), endNames.length(), 0);
     } else if (command == "PRIVMSG") {
         std::string target;
         iss >> target;
