@@ -31,9 +31,13 @@ bool Channel::hasClient(Client *client) const {
 }
 
 void Channel::broadcast(const std::string &message, Client *sender) {
+    std::string senderNick = sender ? sender->getNickname() : "";
+
     for (size_t i = 0; i < _clients.size(); ++i) {
-        // sender NULL olabilir, kontrol et
-        if (!sender || _clients[i]->getNickname() != sender->getNickname()) {
+        if (_clients[i] == NULL)
+            continue;
+
+        if (!sender || _clients[i]->getNickname() != senderNick) {
             send(_clients[i]->getFd(), message.c_str(), message.length(), 0);
         }
     }
