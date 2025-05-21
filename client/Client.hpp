@@ -17,7 +17,9 @@ class Client {
         bool    _hasGivenPassword;
 
         Server* _server;
-    
+
+        bool _ready; //kullanıcı JOIN sonrası tamamen aktif mi?
+
     public:
         Client(int fd);
         ~Client();
@@ -38,6 +40,9 @@ class Client {
 
         void setServer(Server *server);
         Server *getServer() const;
+
+        void setReady(bool r) { _ready = r; };
+        bool isReady() const { return _ready; };
 };
 
 #endif

@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 
 Channel::Channel(const std::string &name)
-    : _name(name), _inviteOnly(false), _userLimit(0), _hasUserLimit(false) {}
+    : _name(name), _inviteOnly(false), _userLimit(0), _hasUserLimit(false), topicRestrict(false){}
 
 Channel::~Channel() {}
 
@@ -119,3 +119,12 @@ bool Channel::isFull() const { return _hasUserLimit && static_cast<int>(_clients
 void Channel::addOperator(Client *client) { _operators.insert(client->getNickname()); }
 
 void Channel::removeOperator(Client *client) { _operators.erase(client->getNickname()); }
+
+
+void Channel::setTopicRestrict(bool value) {
+    topicRestrict = value;
+}
+
+bool Channel::isTopicRestricted() const {
+    return topicRestrict;
+}

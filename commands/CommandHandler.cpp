@@ -73,67 +73,52 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         }
 
         channel->addClient(client);
+        // Bağlantı bilgileri
+        std::string nick = client->getNickname();
+        std::string chan = chanName;
+        std::string fdJoinMsg = ":" + nick + "!" + client->getUsername() + "@localhost JOIN :" + chan + "\r\n";
+        send(client->getFd(), fdJoinMsg.c_str(), fdJoinMsg.size(), 0);
 
+        std::string topicMsg = ":ircserv 332 " + nick + " " + chan + " :Welcome to " + chan + "\r\n";
+        send(client->getFd(), topicMsg.c_str(), topicMsg.size(), 0);
+
+        std::string nameListMsg = ":ircserv 353 " + nick + " = " + chan + " :" + nick + "\r\n";
+        send(client->getFd(), nameListMsg.c_str(), nameListMsg.size(), 0);
+
+        std::string endOfNamesMsg = ":ircserv 366 " + nick + " " + chan + " :End of /NAMES list.\r\n";
+        send(client->getFd(), endOfNamesMsg.c_str(), endOfNamesMsg.size(), 0);
+
+        std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
+        channel->broadcast(joinMsg, NULL); // kendisi de dahil tüm client'lara
+        client->setReady(true);
         std::cout << "Client " << client->getFd() << " joined " << chanName << std::endl;
     } else if (command == "PRIVMSG") {
         std::string target;
         iss >> target;
 
-        std::string msg;
-        std::getline(iss, msg);
+        std::string message;
+        std::getline(iss, message);
+        if (!message.empty() && message[0] == ' ')
+            message.erase(0, 1);
 
-        // Trim baştaki boşluklar
-        if (!msg.empty() && msg[0] == ' ')
-            msg.erase(0, 1);
-        if (!msg.empty() && msg[0] == ':')
-            msg.erase(0, 1);
-
-        if (target.empty() || msg.empty()) {
-            send(client->getFd(), "Invalid PRIVMSG syntax\r\n", 25, 0);
+        if (target.empty() || message.empty()) {
+            std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;
             return;
         }
 
         Server *server = client->getServer();
         std::map<std::string, Channel*> &channels = server->getChannelMap();
 
-        // 🔁 Kanal mesajı mı, özel mesaj mı?
-        if (target[0] == '#') {
-            if (channels.find(target) == channels.end()) {
-                send(client->getFd(), "Channel not found\r\n", 20, 0);
-                return;
-            }
-
-            Channel *channel = channels[target];
-
-            if (!channel->hasClient(client)) {
-                std::string err = ": 404 " + client->getNickname() + " " + target + " :Cannot send to channel\r\n";
-                send(client->getFd(), err.c_str(), err.length(), 0);
-                return;
-            }
-
-            std::string out = ":" + client->getNickname() + " PRIVMSG " + target + " :" + msg + "\r\n";
-            channel->broadcast(out, client); // diğer herkese gönder
+        if (channels.find(target) == channels.end()) {
+            std::cout << "Channel not found: " << target << std::endl;
+            return;
         }
-        else {
-            const std::map<int, Client*> &clients = server->getClientMap();
-            Client *targetClient = NULL;
 
-            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->second->getNickname() == target) {
-                    targetClient = it->second;
-                    break;
-                }
-            }
+        Channel *channel = channels[target];
+        std::string fullMessage = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
+        channel->broadcast(fullMessage, client);
 
-            if (!targetClient) {
-                std::string err = ": 401 " + client->getNickname() + " " + target + " :No such nick\r\n";
-                send(client->getFd(), err.c_str(), err.length(), 0);
-                return;
-            }
-
-            std::string out = ":" + client->getNickname() + " PRIVMSG " + target + " :" + msg + "\r\n";
-            send(targetClient->getFd(), out.c_str(), out.length(), 0);
-        }
+        std::cout << "Client " << client->getFd() << " sent to " << target << ": " << message << std::endl;
     } else if (command == "KICK") {
         std::string chanName, targetNick;
         iss >> chanName >> targetNick;
@@ -167,6 +152,10 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         }
 
         channel->kickClient(client, target, reason);
+        std::string kickMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost KICK " +
+                      chanName + " " + targetNick + " :" + reason + "\r\n";
+        channel->broadcast(kickMsg, client);
+
         std::cout << "Client " << client->getFd() << " kicked " << targetNick << " from " << chanName << std::endl;
     } else if (command == "TOPIC") {
         std::string chanName;
@@ -194,15 +183,17 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             send(client->getFd(), response.c_str(), response.length(), 0);
             return;
         }
-        if (!channel->isOperator(client)) {
-            send(client->getFd(), "You're not channel operator\r\n", 30, 0);
+        if (channel->isTopicRestricted() && !channel->isOperator(client)) {
+            send(client->getFd(), "You're not allowed to change the topic\r\n", 40, 0);
             return;
         }
 
         channel->setTopic(newTopic);
 
-        std::string notify = ":" + client->getNickname() + " TOPIC " + chanName + " :" + newTopic + "\r\n";
+        std::string notify = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost TOPIC " +
+                                chanName + " :" + newTopic + "\r\n";
         channel->broadcast(notify, NULL);
+
         std::cout << "Topic of " << chanName << " set to:" << newTopic << std::endl;
     } else if (command == "INVITE") {
             std::string nick, chanName;
@@ -236,24 +227,25 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
             channel->inviteClient(target);
 
-            std::string notice = ":" + client->getNickname() + " INVITE " + nick + " :" + chanName + "\r\n";
+            std::string notice = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost INVITE " +
+            nick + " :" + chanName + "\r\n";
             send(target->getFd(), notice.c_str(), notice.length(), 0);
+
             send(client->getFd(), "User invited\r\n", 15, 0);
 
             std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
     } else if (command == "MODE") {
-        std::string chanName, modeStr;
-        iss >> chanName >> modeStr;
+        std::string chanName, modeStr, param;
+        iss >> chanName >> modeStr >> param;
 
         if (chanName.empty() || modeStr.empty()) {
-            send(client->getFd(), "Usage: MODE <#channel> [+/-mode]\r\n", 35, 0);
+            send(client->getFd(), "Usage: MODE <#channel> [+/-mode] [param]\r\n", 45, 0);
             return;
         }
 
         Server *server = client->getServer();
         std::map<std::string, Channel*> &channels = server->getChannelMap();
 
-        // ✅ Kanal var mı kontrolü
         if (channels.find(chanName) == channels.end()) {
             send(client->getFd(), "Channel not found\r\n", 20, 0);
             return;
@@ -261,104 +253,59 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
         Channel *channel = channels[chanName];
 
-        // ✅ Kullanıcı operatör mü?
         if (!channel->isOperator(client)) {
             send(client->getFd(), "You are not channel operator\r\n", 31, 0);
             return;
         }
 
-        // ✅ Mod işlemleri
+        std::string modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost MODE " + chanName + " ";
+
         if (modeStr == "+i") {
             channel->setInviteOnly(true);
-            send(client->getFd(), "Invite-only mode set (+i)\r\n", 28, 0);
+            modeResponse += "+i\r\n";
+            channel->broadcast(modeResponse, NULL);
         } else if (modeStr == "-i") {
             channel->setInviteOnly(false);
-            send(client->getFd(), "Invite-only mode removed (-i)\r\n", 33, 0);
+            modeResponse += "-i\r\n";
+            channel->broadcast(modeResponse, NULL);
+        } else if (modeStr == "+t") {
+            channel->setTopicRestrict(true);
+            modeResponse += "+t\r\n";
+            channel->broadcast(modeResponse, NULL);
+        } else if (modeStr == "-t") {
+            channel->setTopicRestrict(false);
+            modeResponse += "-t\r\n";
+            channel->broadcast(modeResponse, NULL);
         } else if (modeStr == "+k") {
-            std::string key;
-            iss >> key;
-
-            if (key.empty()) {
-                send(client->getFd(), "Password required for +k\r\n", 27, 0);
+            if (param.empty()) {
+                send(client->getFd(), "Password required for +k\r\n", 28, 0);
                 return;
             }
-
-            channel->setPassword(key);
-            send(client->getFd(), "Channel password set (+k)\r\n", 28, 0);
-        }
-        else if (modeStr == "-k") {
-            channel->clearPassword();
-            send(client->getFd(), "Channel password removed (-k)\r\n", 32, 0);
+            channel->setPassword(param);
+            modeResponse += "+k " + param + "\r\n";
+            channel->broadcast(modeResponse, NULL);
+        } else if (modeStr == "-k") {
+            channel->setPassword("");
+            modeResponse += "-k\r\n";
+            channel->broadcast(modeResponse, NULL);
         } else if (modeStr == "+l") {
-            std::string limitStr;
-            iss >> limitStr;
-
-            int limit = std::atoi(limitStr.c_str());
-            if (limit <= 0) {
-                send(client->getFd(), "Invalid limit\r\n", 15, 0);
+            if (param.empty()) {
+                send(client->getFd(), "User limit required for +l\r\n", 30, 0);
                 return;
             }
-
+            int limit = std::atoi(param.c_str());
             channel->setUserLimit(limit);
-            send(client->getFd(), "User limit set (+1)\r\n", 22, 0);
+            modeResponse += "+l " + param + "\r\n";
+            channel->broadcast(modeResponse, NULL);
         } else if (modeStr == "-l") {
-            channel->clearUserLimit();
-            send(client->getFd(), "User limit removed (-l)\r\n", 26, 0);
-        } else if (modeStr == "+o") {
-            std::string nick;
-            iss >> nick;
-
-            if (nick.empty()) {
-                send(client->getFd(), "Nickname required for +o\r\n", 27, 0);
-                return;
-            }
-
-            const std::map<int, Client*> &clients = server->getClientMap();
-            Client *target = NULL;
-            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->second->getNickname() == nick) {
-                    target = it->second;
-                    break;
-                }
-            }
-
-            if (!target || !channel->hasClient(target)) {
-                send(client->getFd(), "Target user not in channel\r\n", 29, 0);
-                return;
-            }
-
-            channel->addOperator(target);
-            send(client->getFd(), "Operator privilege granted (+o)\r\n", 33, 0);
-        } else if (modeStr == "-o") {
-            std::string nick;
-            iss >> nick;
-
-            if (nick.empty()) {
-                send(client->getFd(), "Nickname required for -o\r\n", 27, 0);
-                return;
-            }
-
-            const std::map<int, Client*> &clients = server->getClientMap();
-            Client *target = NULL;
-
-            for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) {
-                if (it->second->getNickname() == nick) {
-                target = it->second;
-                break;
-                }
-            }
-
-            if (!target || !channel->hasClient(target)) {
-                send(client->getFd(), "Target user not in channel\r\n", 29, 0);
-                return;
-            }
-
-            channel->removeOperator(target);
-            send(client->getFd(), "Operator privilege revoked (-o)\r\n", 34, 0);
+            channel->setUserLimit(0);
+            modeResponse += "-l\r\n";
+            channel->broadcast(modeResponse, NULL);
         } else {
-            send(client->getFd(), "Unsupported MODE\r\n", 19, 0);
+            send(client->getFd(), "Unknown mode\r\n", 15, 0);
+            return;
         }
-    } else {
-        std::cout << "Unknown command from client " << client->getFd() << ": " << raw << std::endl;
+
+        std::cout << "Client " << client->getFd() << " set mode " << modeStr << " on " << chanName << std::endl;
     }
 }

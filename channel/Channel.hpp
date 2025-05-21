@@ -18,6 +18,8 @@ class Channel {
         bool _hasUserLimit;
         std::set<std::string> _operators;
 
+        bool topicRestrict;
+
     public:
         Channel(const std::string &name);
         ~Channel();
@@ -49,6 +51,10 @@ class Channel {
         bool isFull() const;
         void addOperator(Client *client);
         void removeOperator(Client *client);
+
+        void setTopicRestrict(bool value);
+        bool isTopicRestricted() const;
+
 };
 
 #endif
