@@ -71,31 +71,35 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             return;
         }
 
-        // ✅ kanala ekle
+        // ✅ client kanala eklenmeden önce listeyi al
+        const std::vector<Client*> &clientsBefore = channel->getClients();
+
+        // ✅ kanala client'ı ekle
         channel->addClient(client);
 
         std::cout << "Client " << client->getFd() << " joined " << chanName << std::endl;
 
-        // ✅ JOIN bildirimi (herkese)
-        std::string joinNotice = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
-        const std::vector<Client*> &clients = channel->getClients();
-        for (size_t i = 0; i < clients.size(); ++i) {
-            send(clients[i]->getFd(), joinNotice.c_str(), joinNotice.length(), 0);  // ✅ send, NOT end
+        // ✅ JOIN bildirimi (herkese + kendine)
+        std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
+        for (size_t i = 0; i < clientsBefore.size(); ++i) {
+            send(clientsBefore[i]->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
         }
+        send(client->getFd(), joinMsg.c_str(), joinMsg.length(), 0); // Kendisine de gönder!
 
-        // ✅ TOPIC bilgisi
+        // ✅ TOPIC
         std::string topicMsg = ":ircserv 332 " + client->getNickname() + " " + chanName + " :" + channel->getTopic() + "\r\n";
         send(client->getFd(), topicMsg.c_str(), topicMsg.length(), 0);
 
-        // ✅ NAMES listesi
+        // ✅ NAMES
+        const std::vector<Client*> &allClients = channel->getClients();
         std::string nameList = ":ircserv 353 " + client->getNickname() + " = " + chanName + " :";
-        for (size_t i = 0; i < clients.size(); ++i) {
-            nameList += clients[i]->getNickname() + " ";
+        for (size_t i = 0; i < allClients.size(); ++i) {
+            nameList += allClients[i]->getNickname() + " ";
         }
         nameList += "\r\n";
         send(client->getFd(), nameList.c_str(), nameList.length(), 0);
 
-        // ✅ NAMES bitiş bildirimi
+        // ✅ NAMES END
         std::string endNames = ":ircserv 366 " + client->getNickname() + " " + chanName + " :End of /NAMES list.\r\n";
         send(client->getFd(), endNames.c_str(), endNames.length(), 0);
     } else if (command == "PRIVMSG") {
