@@ -2,7 +2,7 @@
 #define SERVER_HPP
 
 #include "../client/Client.hpp"
-#include "../commands/CommandHandler.hpp"
+#include "../command/CommandHandler.hpp"
 #include "../channel/Channel.hpp"
 #include <map>
 #include <vector>

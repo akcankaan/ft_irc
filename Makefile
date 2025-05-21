@@ -7,7 +7,16 @@ SRC_DIR = .
 SRCS    = main.cpp \
           server/Server.cpp \
 		  client/Client.cpp \
-		  commands/CommandHandler.cpp \
+		  command/CommandHandler.cpp \
+		  command/commands/password.cpp \
+		  command/commands/nick.cpp \
+		  command/commands/user.cpp \
+		  command/commands/join.cpp \
+		  command/commands/privmsg.cpp \
+		  command/commands/kick.cpp \
+		  command/commands/topic.cpp \
+		  command/commands/invite.cpp \
+		  command/commands/mode.cpp \
 		  channel/Channel.cpp
 
 OBJS    = $(SRCS:.cpp=.o)
