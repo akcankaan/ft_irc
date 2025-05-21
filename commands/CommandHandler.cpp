@@ -77,8 +77,11 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         std::cout << "Client " << client->getFd() << " joined " << chanName << std::endl;
 
         // ✅ JOIN bildirimi (herkese)
-        std::string joinMsg = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
-        channel->broadcast(joinMsg, NULL); // herkes görsün (gönderen dahil)
+        std::string joinNotice = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost JOIN :" + chanName + "\r\n";
+        const std::vector<Client*> &clients = channel->getClients();
+        for (size_t i = 0; i < clients.size(); ++i) {
+            send(clients[i]->getFd(), joinNotice.c_str(), joinNotice.length(), 0);  // ✅ send, NOT end
+        }
 
         // ✅ TOPIC bilgisi
         std::string topicMsg = ":ircserv 332 " + client->getNickname() + " " + chanName + " :" + channel->getTopic() + "\r\n";
@@ -86,7 +89,6 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
         // ✅ NAMES listesi
         std::string nameList = ":ircserv 353 " + client->getNickname() + " = " + chanName + " :";
-        const std::vector<Client*> &clients = channel->getClients();
         for (size_t i = 0; i < clients.size(); ++i) {
             nameList += clients[i]->getNickname() + " ";
         }
