@@ -5,6 +5,7 @@
 #include <sstream>
 #include <sys/socket.h>
 #include <cstdlib>
+#include <string.h>
 
 void CommandHandler::handleCommand(Client *client, const std::string &raw) {
     std::istringstream iss(raw);
@@ -84,7 +85,6 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         for (size_t i = 0; i < clientsBefore.size(); ++i) {
             send(clientsBefore[i]->getFd(), joinMsg.c_str(), joinMsg.length(), 0);
         }
-        send(client->getFd(), joinMsg.c_str(), joinMsg.length(), 0); // Kendisine de gönder!
 
         // ✅ TOPIC
         std::string topicMsg = ":ircserv 332 " + client->getNickname() + " " + chanName + " :" + channel->getTopic() + "\r\n";
@@ -250,12 +250,14 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
             send(client->getFd(), "User invited\r\n", 15, 0);
 
             std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
-    } else if (command == "MODE") {
+    }
+     else if (command == "MODE") {
         std::string chanName, modeStr, param;
         iss >> chanName >> modeStr >> param;
 
         if (chanName.empty() || modeStr.empty()) {
-            send(client->getFd(), "Usage: MODE <#channel> [+/-mode] [param]\r\n", 45, 0);
+            const char *msg = "Usage: MODE <#channel> [+/-mode] [param]\r\n";
+            send(client->getFd(), msg, strlen(msg), 0);
             return;
         }
 
@@ -263,14 +265,16 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         std::map<std::string, Channel*> &channels = server->getChannelMap();
 
         if (channels.find(chanName) == channels.end()) {
-            send(client->getFd(), "Channel not found\r\n", 20, 0);
+            const char *msg = "Channel not found\r\n";
+            send(client->getFd(), msg, strlen(msg), 0);
             return;
         }
 
         Channel *channel = channels[chanName];
 
         if (!channel->isOperator(client)) {
-            send(client->getFd(), "You are not channel operator\r\n", 31, 0);
+            const char *msg ="You are not channel operator\r\n";
+            send(client->getFd(), msg, strlen(msg), 0);
             return;
         }
 
