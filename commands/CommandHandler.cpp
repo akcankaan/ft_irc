@@ -108,8 +108,12 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
 
         std::string message;
         std::getline(iss, message);
+
+        // Fazlalıkları temizle
         if (!message.empty() && message[0] == ' ')
             message.erase(0, 1);
+        if (!message.empty() && message[0] == ':')
+            message.erase(0, 1);  // ÇİFT :: problemini engeller
 
         if (target.empty() || message.empty()) {
             std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;
@@ -125,6 +129,8 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw) {
         }
 
         Channel *channel = channels[target];
+
+        // ✅ Doğru format: sadece tek ':' kullanılmalı!
         std::string fullMessage = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
         channel->broadcast(fullMessage, client);
 
