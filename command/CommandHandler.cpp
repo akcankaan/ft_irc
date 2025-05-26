@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <string.h>
 
-void CommandHandler::handleCommand(Client *client, const std::string &raw) 
+void CommandHandler::handleCommand(Client *client, const std::string &raw)
 {
     std::istringstream iss(raw);
     std::string command;
@@ -22,12 +22,17 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw)
         join(client, iss);
     else if (command == "PRIVMSG")
         privmsg(client, iss);
-    else if (command == "KICK") 
+    else if (command == "KICK")
         kick(client, iss);
-    else if (command == "TOPIC") 
+    else if (command == "TOPIC")
         topic(client, iss);
     else if (command == "INVITE")
         invite(client, iss);
     else if (command == "MODE")
+    {
+        std::cout << "why" << std::endl;
         mode(client, iss);
+    }
+    else
+        return ;
 }

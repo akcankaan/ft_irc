@@ -12,23 +12,23 @@ void invite (Client *client, std::istringstream &iss)
     std::string nick, chanName;
     iss >> nick >> chanName;
 
-    if (nick.empty() || chanName.empty()) 
+    if (nick.empty() && chanName.empty())
     {
         const char *msg = "INVITE syntax: INVITE <nick> <#channel>\r\n";
-        send(client->getFd(), msg, strlen(msg), 0); 
+        send(client->getFd(), msg, strlen(msg), 0);
         return;
     }
 
     Server *server = client->getServer();
     Channel *channel = server->getChannelMap()[chanName];
-    if (!channel) 
+    if (!channel)
     {
         const char *msg = "Channel not found\r\n";
         send(client->getFd(), msg, strlen(msg), 0);
         return;
     }
 
-    if (!channel->isOperator(client)) 
+    if (!channel->isOperator(client->getNickname()))
     {
         const char *msg = "You are not channel operator\r\n";
         send(client->getFd(), msg, strlen(msg), 0);
@@ -37,9 +37,9 @@ void invite (Client *client, std::istringstream &iss)
 
     Client *target = NULL;
     const std::map<int, Client*> &clients = server->getClientMap();
-    for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it) 
+    for (std::map<int, Client*>::const_iterator it = clients.begin(); it != clients.end(); ++it)
     {
-        if (it->second->getNickname() == nick) 
+        if (it->second->getNickname() == nick)
         {
             target = it->second;
             break;

@@ -33,7 +33,7 @@ class Channel {
 
         void removeClient(Client *client);
         void kickClient(Client *by, Client *target, const std::string &reason);
-        bool isOperator(Client *client) const;
+        bool isOperator(std::string nickname) const;
         void setOperator(Client *client);
         const std::string &getTopic() const;
         void setTopic(const std::string &topic);
@@ -49,7 +49,7 @@ class Channel {
         void clearUserLimit();
         bool hasUserLimit() const;
         bool isFull() const;
-        void addOperator(Client *client);
+        void addOperator(std::string nickname);
         void removeOperator(Client *client);
 
         void setTopicRestrict(bool value);

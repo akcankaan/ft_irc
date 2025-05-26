@@ -9,10 +9,10 @@
 
 void mode (Client *client, std::istringstream &iss)
 {
-    std::string chanName, modeStr, param;
-    iss >> chanName >> modeStr >> param;
+    std::string chanName, modeStr;
+    iss >> chanName >> modeStr;
 
-    if (chanName.empty() || modeStr.empty()) 
+    if (chanName.empty() && modeStr.empty())
     {
         const char *msg = "Usage: MODE <#channel> [+/-mode] [param]\r\n";
         send(client->getFd(), msg, strlen(msg), 0);
@@ -22,7 +22,7 @@ void mode (Client *client, std::istringstream &iss)
     Server *server = client->getServer();
     std::map<std::string, Channel*> &channels = server->getChannelMap();
 
-    if (channels.find(chanName) == channels.end()) 
+    if (channels.find(chanName) == channels.end())
     {
         const char *msg = "Channel not found\r\n";
         send(client->getFd(), msg, strlen(msg), 0);
@@ -31,7 +31,7 @@ void mode (Client *client, std::istringstream &iss)
 
     Channel *channel = channels[chanName];
 
-    if (!channel->isOperator(client)) 
+    if (!channel->isOperator(client->getNickname()))
     {
         const char *msg ="You are not channel operator\r\n";
         send(client->getFd(), msg, strlen(msg), 0);
@@ -57,7 +57,9 @@ void mode (Client *client, std::istringstream &iss)
         modeResponse += "-t\r\n";
         channel->broadcast(modeResponse, NULL);
     } else if (modeStr == "+k") {
-        if (param.empty()) 
+        std::string param;
+        iss >> param;
+        if (param.empty())
         {
             const char *msg = "Password required for +k\r\n";
             send(client->getFd(), msg, strlen(msg), 0);
@@ -71,7 +73,9 @@ void mode (Client *client, std::istringstream &iss)
         modeResponse += "-k\r\n";
         channel->broadcast(modeResponse, NULL);
     } else if (modeStr == "+l") {
-        if (param.empty()) 
+        std::string param;
+        iss >> param;
+        if (param.empty())
         {
             const char *msg = "User limit required for +l\r\n";
             send(client->getFd(), msg, strlen(msg), 0);
@@ -84,6 +88,21 @@ void mode (Client *client, std::istringstream &iss)
     } else if (modeStr == "-l") {
         channel->setUserLimit(0);
         modeResponse += "-l\r\n";
+        channel->broadcast(modeResponse, NULL);
+    } else if(modeStr == "+o"){
+        std::string nickname;
+        iss >> nickname;
+        if (iss.fail() || !iss.eof())
+            return;//hata
+        if(channel->isOperator(nickname))
+        {
+
+            std::cout << "nickname op" << std::endl;
+            return ;
+        }
+
+        channel->addOperator(nickname);
+        modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "+o\r\n";
         channel->broadcast(modeResponse, NULL);
     } else {
         const char *msg = "Unknown mode\r\n";

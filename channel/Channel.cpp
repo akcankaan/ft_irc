@@ -18,7 +18,7 @@ void Channel::addClient(Client *client) {
 
         // Eğer bu kanalda ilk kullanıcıysa, operator yap
         if (_clients.size() == 1)
-            setOperator(client);
+            addOperator(client->getNickname());
     }
 }
 
@@ -51,13 +51,14 @@ void Channel::removeClient(Client *client) {
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
         if (*it == client) {
             _clients.erase(it);
+            _operators.erase(client->getNickname());
             break;
         }
     }
 }
 
 void Channel::kickClient(Client *by, Client *target, const std::string &reason) {
-    if (!isOperator(by)) {
+    if (!isOperator(by->getNickname())) {
         send(by->getFd(), "You are not channel operator\r\n", 31, 0);
         return;
     }
@@ -74,13 +75,13 @@ void Channel::kickClient(Client *by, Client *target, const std::string &reason) 
     send(target->getFd(), msg.c_str(), msg.length(), 0);
 }
 
-bool Channel::isOperator(Client *client) const {
-    return !_clients.empty() && _clients[0] == client;
-}
-
-void Channel::setOperator(Client *client) {
-    if (_clients.empty())
-        _clients.push_back(client);
+bool Channel::isOperator(std::string nickname) const {
+    for (std::set<std::string>::const_iterator it = _operators.begin(); it != _operators.end(); ++it) {
+        if ((*it) == nickname) {
+            return true;
+        }
+    }
+    return false;
 }
 
 const std::string &Channel::getTopic() const { return _topic; }
@@ -121,7 +122,7 @@ bool Channel::hasUserLimit() const { return _hasUserLimit; }
 
 bool Channel::isFull() const { return _hasUserLimit && static_cast<int>(_clients.size()) >= _userLimit; }
 
-void Channel::addOperator(Client *client) { _operators.insert(client->getNickname()); }
+void Channel::addOperator(std::string nickname) { _operators.insert(nickname); }
 
 void Channel::removeOperator(Client *client) { _operators.erase(client->getNickname()); }
 
