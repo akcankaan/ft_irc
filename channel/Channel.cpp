@@ -124,7 +124,7 @@ bool Channel::isFull() const { return _hasUserLimit && static_cast<int>(_clients
 
 void Channel::addOperator(std::string nickname) { _operators.insert(nickname); }
 
-void Channel::removeOperator(Client *client) { _operators.erase(client->getNickname()); }
+void Channel::removeOperator(std::string nickname) { _operators.erase(nickname); }
 
 
 void Channel::setTopicRestrict(bool value) {

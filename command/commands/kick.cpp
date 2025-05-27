@@ -22,8 +22,10 @@ void kick(Client *client, std::istringstream &iss)
     Channel *channel = server->getChannelMap()[chanName];
     if (!(channel->isOperator(client->getNickname())))
     {
-        const char *msg ="You are not channel operator\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "You are not channel operator" << std::endl;
+        std::string warning = ":@localhost 481 " + client->getNickname() +
+                  " :You are not channel operator\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
     if (!channel)
@@ -44,14 +46,16 @@ void kick(Client *client, std::istringstream &iss)
 
     if (!target)
     {
-        std::cout << "Target not found: " << targetNick << std::endl;
+        std::cout << "User not found: " << targetNick << std::endl;
+        std::string warning = ":@localhost 441 " + client->getNickname() +
+                  " :User not found: " + targetNick +"\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
     if(channel->isOperator(targetNick)){
-        std::string warning = ":" + client->getNickname() + "!" + client->getUsername() +
-                      "@localhost PRIVMSG " + chanName +
-                      " : !*!*! Cannot kick " + targetNick + ": they are an operator\r\n";
-
+        std::cout << "Cannot kick " << targetNick << " :an operator";
+        std::string warning = ":@localhost 483 " + client->getNickname() +
+                  " :Cannot kick " + targetNick +" :an operator\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
         return ;
     }

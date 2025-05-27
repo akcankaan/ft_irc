@@ -12,10 +12,12 @@ void join(Client *client, std::istringstream &iss)
     std::string chanName;
     iss >> chanName;
 
-    if (chanName.empty() || chanName[0] != '#') 
+    if (chanName.empty() || chanName[0] != '#')
     {
-        const char *msg = "Invalid channel name\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "Invalid channel name" << std::endl;
+        std::string warning = ":@localhost 421 " + client->getNickname() +
+                  " :Invalid channel name\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -23,31 +25,37 @@ void join(Client *client, std::istringstream &iss)
     Channel *channel = server->getOrCreateChannel(chanName);
 
         // 🔒 invite-only kontrolü
-    if (channel->isInviteOnly() && !channel->isInvited(client)) 
+    if (channel->isInviteOnly() && !channel->isInvited(client))
     {
-        const char *msg = "Channel is invite-only\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "Channel is invite-only" << std::endl;
+        std::string warning = ":@localhost 473 " + client->getNickname() +
+                  " :Channel is invite-only\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
         // 🔒 şifre kontrolü
     std::string joinPassword;
     iss >> joinPassword;
-    if (channel->hasPassword()) 
+    if (channel->hasPassword())
     {
-        if (joinPassword != channel->getPassword()) 
+        if (joinPassword != channel->getPassword())
         {
-            const char *msg = "Incorrect channel password\r\n";
-            send(client->getFd(), msg, strlen(msg), 0);
+            std::cout << "Incorrect channel password" << std::endl;
+            std::string warning = ":@localhost 475 " + client->getNickname() +
+                  " :Incorrect channel password\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
             return;
         }
     }
 
         // 🔒 kullanıcı limiti kontrolü
-    if (channel->isFull()) 
+    if (channel->isFull())
     {
-        const char *msg = "Channel is full\r\n";
-        send(client->getFd(), msg, strlen(msg), 0); 
+        std::cout << "Channel is full" << std::endl;
+        std::string warning = ":@localhost 471 " + client->getNickname() +
+                  " :Channel is full\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 

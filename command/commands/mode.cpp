@@ -14,8 +14,10 @@ void mode (Client *client, std::istringstream &iss)
 
     if (chanName.empty() && modeStr.empty())
     {
-        const char *msg = "Usage: MODE <#channel> [+/-mode] [param]\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "Usage: MODE <#channel> [+/-mode] [param]" << std::endl;
+        std::string warning = ":@localhost 421 " + client->getNickname() +
+                " :Usage: MODE <#channel> [+/-mode] [param]\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -24,8 +26,10 @@ void mode (Client *client, std::istringstream &iss)
 
     if (channels.find(chanName) == channels.end())
     {
-        const char *msg = "Channel not found\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "Channel not found" << std::endl;
+        std::string warning = ":@localhost 403 " + client->getNickname() +
+                " :Channel not found\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -33,8 +37,10 @@ void mode (Client *client, std::istringstream &iss)
 
     if (!channel->isOperator(client->getNickname()))
     {
-        const char *msg ="You are not channel operator\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "You are not channel operator" << std::endl;
+        std::string warning = ":@localhost 482 " + client->getNickname() +
+                " :You are not channel operator\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -61,8 +67,10 @@ void mode (Client *client, std::istringstream &iss)
         iss >> param;
         if (param.empty())
         {
-            const char *msg = "Password required for +k\r\n";
-            send(client->getFd(), msg, strlen(msg), 0);
+            std::cout << "Password required for +k" << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :Password required for +k\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
             return;
         }
         channel->setPassword(param);
@@ -77,8 +85,10 @@ void mode (Client *client, std::istringstream &iss)
         iss >> param;
         if (param.empty())
         {
-            const char *msg = "User limit required for +l\r\n";
-            send(client->getFd(), msg, strlen(msg), 0);
+            std::cout << "User limit required for +l" << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :User limit required for +l\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
             return;
         }
         int limit = std::atoi(param.c_str());
@@ -93,20 +103,53 @@ void mode (Client *client, std::istringstream &iss)
         std::string nickname;
         iss >> nickname;
         if (iss.fail() || !iss.eof())
-            return;//hata
+        {
+            std::cout << "Wrong input." << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :" + "Wrong input\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
         if(channel->isOperator(nickname))
         {
-
-            std::cout << "nickname op" << std::endl;
+            std::cout << nickname << " : already operator" << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :"+ nickname +" :already operator\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
             return ;
         }
 
         channel->addOperator(nickname);
         modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "+o\r\n";
         channel->broadcast(modeResponse, NULL);
-    } else {
-        const char *msg = "Unknown mode\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+    }else if(modeStr == "-o"){
+        std::string nickname;
+        iss >> nickname;
+        if (iss.fail() || !iss.eof())
+        {
+            std::cout << "Wrong input." << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :" + "Wrong input\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
+        if(!channel->isOperator(nickname))
+        {
+            std::cout << nickname << " : is not operator" << std::endl;
+            std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :"+ nickname +" :is not operator\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return ;
+        }
+
+        channel->removeOperator(nickname);
+        modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "-o\r\n";
+        channel->broadcast(modeResponse, NULL);
+        }else {
+        // std::cout << "Unknown mode" << std::endl;
+        // std::string warning = ":@localhost 421 " + client->getNickname() +
+        //             " :Unknown mode\r\n";
+        //     send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 

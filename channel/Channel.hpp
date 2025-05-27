@@ -50,7 +50,7 @@ class Channel {
         bool hasUserLimit() const;
         bool isFull() const;
         void addOperator(std::string nickname);
-        void removeOperator(Client *client);
+        void removeOperator(std::string nickname);
 
         void setTopicRestrict(bool value);
         bool isTopicRestricted() const;

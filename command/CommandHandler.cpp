@@ -29,10 +29,7 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw)
     else if (command == "INVITE")
         invite(client, iss);
     else if (command == "MODE")
-    {
-        std::cout << "why" << std::endl;
         mode(client, iss);
-    }
     else
         return ;
 }

@@ -14,8 +14,10 @@ void topic (Client *client, std::istringstream &iss)
 
     if (chanName.empty())
     {
-        const char *msg = "No channel given\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "No channel given" << std::endl;
+        std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :" + "No channel given\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -23,8 +25,10 @@ void topic (Client *client, std::istringstream &iss)
     Channel *channel = server->getChannelMap()[chanName];
     if (!channel)
     {
-        const char *msg = "Channel not found\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "Channel not found" << std::endl;
+        std::string warning = ":@localhost 403 " + client->getNickname() +
+                " :" + "Channel not found\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
@@ -41,8 +45,10 @@ void topic (Client *client, std::istringstream &iss)
     }
     if (channel->isTopicRestricted() && !channel->isOperator(client->getNickname()))
     {
-        const char *msg = "You're not allowed to change the topic\r\n";
-        send(client->getFd(), msg, strlen(msg), 0);
+        std::cout << "You're not allowed to change the topic" << std::endl;
+        std::string warning = ":@localhost 482 " + client->getNickname() +
+                " :" + "You're not allowed to change the topic\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
