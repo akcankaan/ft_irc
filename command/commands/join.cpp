@@ -89,4 +89,5 @@ void join(Client *client, std::istringstream &iss)
         // ✅ NAMES END
     std::string endNames = ":ircserv 366 " + client->getNickname() + " " + chanName + " :End of /NAMES list.\r\n";
     send(client->getFd(), endNames.c_str(), endNames.length(), 0);
+    client->ignoreNextMode = true;
 }

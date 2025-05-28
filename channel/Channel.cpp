@@ -52,6 +52,7 @@ void Channel::removeClient(Client *client) {
         if (*it == client) {
             _clients.erase(it);
             _operators.erase(client->getNickname());
+            _invited.erase(client->getNickname());
             break;
         }
     }
@@ -59,12 +60,10 @@ void Channel::removeClient(Client *client) {
 
 void Channel::kickClient(Client *by, Client *target, const std::string &reason) {
     if (!isOperator(by->getNickname())) {
-        send(by->getFd(), "You are not channel operator\r\n", 31, 0);
         return;
     }
 
     if (!hasClient(target)) {
-        send(by->getFd(), "Target not in channel\r\n", 24, 0);
         return;
     }
 

@@ -43,6 +43,7 @@ class Client {
 
         void setReady(bool r) { _ready = r; };
         bool isReady() const { return _ready; };
+        bool ignoreNextMode;
 };
 
 #endif
