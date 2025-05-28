@@ -35,6 +35,10 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw)
         }
         mode(client, iss);
     }
+    else if (command == "QUIT")
+        quit(client, iss);
+    else if (command == "PART")
+        part(client, iss);
     else
         return ;
 }

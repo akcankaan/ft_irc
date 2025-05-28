@@ -1,4 +1,6 @@
 #include "Client.hpp"
+#include <string>
+#include <algorithm>
 
 Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _ready(false) {}
 
@@ -31,3 +33,9 @@ void Client::authenticate() { _isAuthenticated = true; }
 void Client::setServer(Server *server) { _server = server; }
 
 Server *Client::getServer() const { return _server; }
+
+void Client::removeChannel(const std::string& channelName) {
+	std::vector<std::string>::iterator it = std::find(_joinedChannels.begin(), _joinedChannels.end(), channelName);
+	if (it != _joinedChannels.end())
+		_joinedChannels.erase(it);
+}

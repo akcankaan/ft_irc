@@ -2,6 +2,7 @@
 #define CLIENT_HPP
 
 #include <string>
+#include <vector>
 
 class Server;
 
@@ -19,6 +20,9 @@ class Client {
         Server* _server;
 
         bool _ready; //kullanıcı JOIN sonrası tamamen aktif mi?
+        // Client.hpp
+        std::vector<std::string> _joinedChannels;
+
 
     public:
         Client(int fd);
@@ -44,6 +48,7 @@ class Client {
         void setReady(bool r) { _ready = r; };
         bool isReady() const { return _ready; };
         bool ignoreNextMode;
+        void removeChannel(const std::string& channelName);
 };
 
 #endif

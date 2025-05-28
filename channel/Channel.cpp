@@ -137,3 +137,13 @@ bool Channel::isTopicRestricted() const {
 const std::vector<Client*> &Channel::getClients() const {
     return _clients;
 }
+
+bool Channel::isClientInChannel(Client *client) const
+{
+	for (std::vector<Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+	{
+		if (*it == client)
+			return true;
+	}
+	return false;
+}

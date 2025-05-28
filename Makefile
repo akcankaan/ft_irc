@@ -17,6 +17,8 @@ SRCS    = main.cpp \
 		  command/commands/topic.cpp \
 		  command/commands/invite.cpp \
 		  command/commands/mode.cpp \
+		  command/commands/quit.cpp \
+		  command/commands/part.cpp \
 		  channel/Channel.cpp
 
 OBJS    = $(SRCS:.cpp=.o)
