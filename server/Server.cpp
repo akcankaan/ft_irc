@@ -94,6 +94,10 @@ void Server::run() {
                             if (!line.empty() && line[line.size() - 1] == '\r')
                                 line.erase(line.size() - 1);
                             CommandHandler::handleCommand(client, line);
+                            if (client->shouldDisconnect()) {
+                                removeClient(client->getFd());
+                                break;
+                            }
                             full.erase(0, pos + 1);
                         }
                     }
@@ -113,7 +117,6 @@ void Server::addClient(int client_fd) {
     Client* newClient = new Client(client_fd);
     newClient->setServer(this);  // Server referansı ver
     _clients[client_fd] = newClient;
-
     // pollfd yapılandırması (DİKKAT: revents sıfırlanmalı!)
     struct pollfd pfd;
     pfd.fd = client_fd;
@@ -146,4 +149,8 @@ std::map<std::string, Channel*> &Server::getChannelMap() {
 
 const std::map<int, Client*> &Server::getClientMap() const {
     return _clients;
+}
+
+std::string Server::getPassword() const { 
+    return _password; 
 }

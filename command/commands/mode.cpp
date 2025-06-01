@@ -146,10 +146,10 @@ void mode (Client *client, std::istringstream &iss)
         modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "-o\r\n";
         channel->broadcast(modeResponse, NULL);
         }else {
-        // std::cout << "Unknown mode" << std::endl;
-        // std::string warning = ":@localhost 421 " + client->getNickname() +
-        //             " :Unknown mode\r\n";
-        //     send(client->getFd(), warning.c_str(), warning.length(), 0);
+        std::cout << "Unknown mode" << std::endl;
+        std::string warning = ":@localhost 421 " + client->getNickname() +
+                    " :Unknown mode\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 

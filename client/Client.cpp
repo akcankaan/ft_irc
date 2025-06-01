@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 
-Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _ready(false) {}
+Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _ready(false), _shouldDisconnect(false) {}
 
 Client::~Client() {}
 
@@ -38,4 +38,13 @@ void Client::removeChannel(const std::string& channelName) {
 	std::vector<std::string>::iterator it = std::find(_joinedChannels.begin(), _joinedChannels.end(), channelName);
 	if (it != _joinedChannels.end())
 		_joinedChannels.erase(it);
+}
+
+void Client::setDisconnected(bool value) 
+{ 
+	_shouldDisconnect = value; 
+}
+bool Client::shouldDisconnect() const 
+{ 
+	return _shouldDisconnect; 
 }

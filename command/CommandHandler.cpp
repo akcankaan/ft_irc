@@ -28,13 +28,8 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw)
         topic(client, iss);
     else if (command == "INVITE")
         invite(client, iss);
-    else if (command == "MODE") {
-        if (client->ignoreNextMode) {
-            client->ignoreNextMode = false;
-            return;
-        }
+    else if (command == "MODE")
         mode(client, iss);
-    }
     else if (command == "QUIT")
         quit(client, iss);
     else if (command == "PART")
