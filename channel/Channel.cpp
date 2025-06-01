@@ -16,7 +16,6 @@ void Channel::addClient(Client *client) {
     if (!hasClient(client)) {
         _clients.push_back(client);
 
-        // Eğer bu kanalda ilk kullanıcıysa, operator yap
         if (_clients.size() == 1)
             addOperator(client->getNickname());
     }

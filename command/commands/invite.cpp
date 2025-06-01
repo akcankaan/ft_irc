@@ -4,7 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <sys/socket.h>
-#include <cstdlib>
 #include <string.h>
 
 void invite (Client *client, std::istringstream &iss)

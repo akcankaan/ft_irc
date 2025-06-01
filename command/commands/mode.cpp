@@ -5,7 +5,7 @@
 #include <sstream>
 #include <sys/socket.h>
 #include <cstdlib>
-#include <string.h>
+
 
 void mode (Client *client, std::istringstream &iss)
 {
@@ -145,11 +145,13 @@ void mode (Client *client, std::istringstream &iss)
         channel->removeOperator(nickname);
         modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "-o\r\n";
         channel->broadcast(modeResponse, NULL);
-        }else {
+    }
+    else 
+    {
         std::cout << "Unknown mode" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +
-                    " :Unknown mode\r\n";
-            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            " :Unknown mode\r\n";
+        send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 

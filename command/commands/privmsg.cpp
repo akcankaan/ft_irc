@@ -3,9 +3,6 @@
 #include "../../channel/Channel.hpp"
 #include <iostream>
 #include <sstream>
-#include <sys/socket.h>
-#include <cstdlib>
-#include <string.h>
 
 void privmsg(Client *client, std::istringstream &iss)
 {
@@ -15,11 +12,10 @@ void privmsg(Client *client, std::istringstream &iss)
     std::string message;
     std::getline(iss, message);
 
-        // Fazlalıkları temizle
     if (!message.empty() && message[0] == ' ')
         message.erase(0, 1);
     if (!message.empty() && message[0] == ':')
-        message.erase(0, 1);  // ÇİFT :: problemini engeller
+        message.erase(0, 1); 
 
     if (target.empty() || message.empty()) {
         std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;
@@ -37,10 +33,8 @@ void privmsg(Client *client, std::istringstream &iss)
     Channel *channel = channels[target];
 
     if (!channel->isClientInChannel(client)) {
-        send(client->getFd(), "2\r\n", 4, 0);
         return;
     }
-        // ✅ Doğru format: sadece tek ':' kullanılmalı!
     std::string fullMessage = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
     channel->broadcast(fullMessage, client);
 

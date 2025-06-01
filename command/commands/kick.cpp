@@ -4,8 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <sys/socket.h>
-#include <cstdlib>
-#include <string.h>
 
 void kick(Client *client, std::istringstream &iss)
 {

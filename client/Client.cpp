@@ -2,7 +2,7 @@
 #include <string>
 #include <algorithm>
 
-Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _ready(false), _shouldDisconnect(false) {}
+Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _shouldDisconnect(false) {}
 
 Client::~Client() {}
 

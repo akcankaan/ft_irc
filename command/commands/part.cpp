@@ -4,8 +4,6 @@
 #include <iostream>
 #include <sstream>
 #include <sys/socket.h>
-#include <cstdlib>
-#include <string.h>
 
 void part(Client *client, std::istringstream &iss)
 {
@@ -39,10 +37,8 @@ void part(Client *client, std::istringstream &iss)
 		return;
 	}
 
-	// Operatörse, çıkınca yeni bir operator atanmalı mı?
 	bool wasOperator = channel->isOperator(client->getNickname());
 
-	// Mesaj: client'e ve diğerlerine
 	std::string partMsg = ":" + client->getNickname() + "!" + client->getUsername() +
 		"@localhost PART " + chanName;
 
@@ -50,17 +46,13 @@ void part(Client *client, std::istringstream &iss)
 		partMsg += " :" + reason;
 	partMsg += "\r\n";
 
-	// Kalanlara gönder
 	channel->broadcast(partMsg, client);
 
-	// Kendi client’e de gönder
 	send(client->getFd(), partMsg.c_str(), partMsg.length(), 0);
 
-	// Channel’dan çıkar
 	channel->removeClient(client);
-	client->removeChannel(chanName); // varsa bu metod
+	client->removeChannel(chanName);
 
-	// Operator ise çıkar, gerekirse yeni atama yap
 	if (wasOperator && !channel->getClients().empty())
 	{
 		channel->removeOperator(client->getNickname());
@@ -86,7 +78,6 @@ void part(Client *client, std::istringstream &iss)
 		}
 	}
 
-	// Eğer kanal boş kaldıysa sil
 	if (channel->getClients().empty())
 		channels.erase(chanName);
 }

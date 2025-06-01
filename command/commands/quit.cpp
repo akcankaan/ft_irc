@@ -4,8 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <sys/socket.h>
-#include <cstdlib>
-#include <string.h>
+
 
 void quit(Client *client, std::istringstream &iss)
 {
@@ -13,13 +12,12 @@ void quit(Client *client, std::istringstream &iss)
 	iss >> chanName;
 
 	std::string msg;
-	std::getline(iss, msg); // tüm kalan mesajı al
-
+	std::getline(iss, msg);
 	if (!msg.empty() && msg[0] == ' ')
-		msg.erase(0, 1); // baştaki boşluğu sil
+		msg.erase(0, 1);
 
 	if (!msg.empty() && msg[0] == ':')
-		msg.erase(0, 1); // baştaki ':' varsa sil
+		msg.erase(0, 1);
 
 	if (msg.empty())
 		msg = "Client exited";

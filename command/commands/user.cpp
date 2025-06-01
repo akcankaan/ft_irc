@@ -1,11 +1,6 @@
 #include "../CommandHandler.hpp"
-#include "../../server/Server.hpp"
-#include "../../channel/Channel.hpp"
 #include <iostream>
 #include <sstream>
-#include <sys/socket.h>
-#include <cstdlib>
-#include <string.h>
 
 void user(Client *client, std::istringstream &iss)
 {

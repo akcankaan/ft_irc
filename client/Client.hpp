@@ -19,8 +19,6 @@ class Client {
 
         Server* _server;
 
-        bool _ready; //kullanıcı JOIN sonrası tamamen aktif mi?
-        // Client.hpp
         std::vector<std::string> _joinedChannels;
         bool _shouldDisconnect;
 
@@ -46,8 +44,6 @@ class Client {
         void setServer(Server *server);
         Server *getServer() const;
 
-        void setReady(bool r) { _ready = r; };
-        bool isReady() const { return _ready; };
         void removeChannel(const std::string& channelName);
         void setDisconnected(bool value);
         bool shouldDisconnect() const;
