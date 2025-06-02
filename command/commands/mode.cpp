@@ -11,7 +11,8 @@ void mode (Client *client, std::istringstream &iss)
 {
     std::string chanName, modeStr;
     iss >> chanName >> modeStr;
-
+    if (client->shouldDisconnect())
+        return;
     if (chanName.empty() && modeStr.empty())
     {
         std::cout << "Usage: MODE <#channel> [+/-mode] [param]" << std::endl;
@@ -146,7 +147,7 @@ void mode (Client *client, std::istringstream &iss)
         modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "-o\r\n";
         channel->broadcast(modeResponse, NULL);
     }
-    else 
+    else
     {
         std::cout << "Unknown mode" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +

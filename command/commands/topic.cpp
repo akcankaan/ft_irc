@@ -10,7 +10,8 @@ void topic (Client *client, std::istringstream &iss)
 {
     std::string chanName;
     iss >> chanName;
-
+    if (client->shouldDisconnect())
+        return;
     if (chanName.empty())
     {
         std::cout << "No channel given" << std::endl;

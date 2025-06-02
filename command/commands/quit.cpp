@@ -13,6 +13,8 @@ void quit(Client *client, std::istringstream &iss)
 
 	std::string msg;
 	std::getline(iss, msg);
+	if (client->shouldDisconnect())
+		return;
 	if (!msg.empty() && msg[0] == ' ')
 		msg.erase(0, 1);
 

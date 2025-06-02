@@ -11,11 +11,12 @@ void privmsg(Client *client, std::istringstream &iss)
 
     std::string message;
     std::getline(iss, message);
-
+    if (client->shouldDisconnect())
+        return;
     if (!message.empty() && message[0] == ' ')
         message.erase(0, 1);
     if (!message.empty() && message[0] == ':')
-        message.erase(0, 1); 
+        message.erase(0, 1);
 
     if (target.empty() || message.empty()) {
         std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;

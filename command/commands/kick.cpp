@@ -9,7 +9,8 @@ void kick(Client *client, std::istringstream &iss)
 {
     std::string chanName, targetNick;
     iss >> chanName >> targetNick;
-
+    if (client->shouldDisconnect())
+        return;
     std::string reason;
     std::getline(iss, reason);
     if (!reason.empty() && reason[0] == ' ' && reason[1] == ':')

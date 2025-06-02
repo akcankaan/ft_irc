@@ -9,13 +9,12 @@ void password(Client *client, std::istringstream &iss)
     std::string givenPassword;
     iss >> givenPassword;
 
-
-    if (givenPassword.empty()) 
+    if (givenPassword.empty())
     {
         std::cout << "Client " << client->getFd() << " gave empty password." << std::endl;
         return;
     }
-    
+
     else if (givenPassword != client->getServer()->getPassword())
     {
         std::cout << "Client " << client->getFd() << " gave WRONG password." << std::endl;
@@ -23,7 +22,10 @@ void password(Client *client, std::istringstream &iss)
         return;
     }
     else
+    {
         client->markPasswordGiven();
-    
+        client->setDisconnected(false);
+    }
+
     std::cout << "Client " << client->getFd() << " gave correct password." << std::endl;
 }

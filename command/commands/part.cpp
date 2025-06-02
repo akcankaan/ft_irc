@@ -12,7 +12,8 @@ void part(Client *client, std::istringstream &iss)
 
 	std::string reason;
 	std::getline(iss, reason);
-
+	if (client->shouldDisconnect())
+		return;
 	if (!reason.empty() && reason[0] == ' ')
 		reason.erase(0, 1);
 	if (!reason.empty() && reason[0] == ':')

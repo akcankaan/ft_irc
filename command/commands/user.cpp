@@ -6,6 +6,8 @@ void user(Client *client, std::istringstream &iss)
 {
     std::string username;
     iss >> username;
+    if (client->shouldDisconnect())
+        return;
     client->setUsername(username);
     std::cout << "Client " << client->getFd() << " set username to " << username << std::endl;
 }

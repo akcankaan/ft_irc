@@ -85,15 +85,15 @@ void Server::run() {
                         Client *client = _clients[fd];
                         client->appendBuffer(std::string(buffer, bytes));
 
-                        std::string &full = const_cast<std::string&>(client->getBuffer());
                         size_t pos;
+                        std::string &full = const_cast<std::string&>(client->getBuffer());
                         while ((pos = full.find("\n")) != std::string::npos) {
                             std::string line = full.substr(0, pos);
                             if (!line.empty() && line[line.size() - 1] == '\r')
                                 line.erase(line.size() - 1);
                             CommandHandler::handleCommand(client, line);
                             if (client->shouldDisconnect()) {
-                                removeClient(client->getFd());
+                                full.erase(0, pos + 1);
                                 break;
                             }
                             full.erase(0, pos + 1);

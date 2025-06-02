@@ -10,7 +10,8 @@ void join(Client *client, std::istringstream &iss)
 {
     std::string chanName;
     iss >> chanName;
-
+    if (client->shouldDisconnect())
+        return;
     if (chanName.empty() || chanName[0] != '#')
     {
         std::cout << "Invalid channel name" << std::endl;
