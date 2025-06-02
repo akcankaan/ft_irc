@@ -1,14 +1,14 @@
 #include "Server.hpp"
 #include <iostream>
-#include <stdexcept>     // std::runtime_error
-#include <cstring>       // memset
-#include <cstdlib>       // atoi, etc.
-#include <unistd.h>      // close
-#include <fcntl.h>       // fcntl
-#include <poll.h>        // poll
-#include <sys/socket.h>  // socket, bind, listen, accept
-#include <netinet/in.h>  // sockaddr_in
-#include <arpa/inet.h>   // inet_ntoa, etc.
+#include <stdexcept>
+#include <cstring>
+#include <cstdlib>
+#include <unistd.h>
+#include <fcntl.h>
+#include <poll.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 Server::Server(int port, const std::string &password)
     : _port(port), _password(password) {
@@ -67,7 +67,6 @@ void Server::run() {
             int fd = _pollFds[i].fd;
 
             if (_pollFds[i].revents & POLLIN) {
-                // Yeni bağlantı
                 if (fd == _serverSocket) {
                     sockaddr_in client_addr;
                     socklen_t client_len = sizeof(client_addr);
@@ -75,7 +74,6 @@ void Server::run() {
                     if (client_fd >= 0)
                         addClient(client_fd);
                 }
-                // Veri geldi
                 else {
                     char buffer[512];
                     std::memset(buffer, 0, sizeof(buffer));
@@ -110,18 +108,16 @@ void Server::run() {
 }
 
 void Server::addClient(int client_fd) {
-    // Socket'i non-blocking moda al
     fcntl(client_fd, F_SETFL, O_NONBLOCK);
 
-    // Yeni client oluştur
+
     Client* newClient = new Client(client_fd);
-    newClient->setServer(this);  // Server referansı ver
+    newClient->setServer(this);
     _clients[client_fd] = newClient;
-    // pollfd yapılandırması (DİKKAT: revents sıfırlanmalı!)
     struct pollfd pfd;
     pfd.fd = client_fd;
     pfd.events = POLLIN;
-    pfd.revents = 0;  // ✅ uninitialized uyarılarını engeller
+    pfd.revents = 0;
     _pollFds.push_back(pfd);
 
     std::cout << "Client added: " << client_fd << std::endl;
@@ -151,6 +147,6 @@ const std::map<int, Client*> &Server::getClientMap() const {
     return _clients;
 }
 
-std::string Server::getPassword() const { 
-    return _password; 
+std::string Server::getPassword() const {
+    return _password;
 }
