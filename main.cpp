@@ -7,8 +7,8 @@ static Server* g_server = NULL;
 
 void handle_sigint(int) {
     std::cout << "\nCaught SIGINT (Ctrl+C), cleaning up..." << std::endl;
-    delete g_server;  // destructor tetiklenir
-    std::exit(0);     // güvenli çıkış
+    delete g_server;
+    std::exit(0);
 }
 
 int main(int argc, char **argv) {
@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     try {
         g_server = new Server(port, password);
         g_server->run();
-        delete g_server;  // normal kapanışta da çağrılsın
+        delete g_server;
     } catch (const std::exception &e) {
         std::cerr << "Server error: " << e.what() << std::endl;
         delete g_server;
