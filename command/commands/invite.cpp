@@ -10,7 +10,7 @@ void invite (Client *client, std::istringstream &iss)
 {
     std::string nick, chanName;
     iss >> nick >> chanName;
-    if (client->shouldDisconnect()) //hata mesajı ekle
+    if (client->shouldDisconnect())
         return;
     if (nick.empty() && chanName.empty())
     {

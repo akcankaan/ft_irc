@@ -150,3 +150,11 @@ const std::map<int, Client*> &Server::getClientMap() const {
 std::string Server::getPassword() const {
     return _password;
 }
+
+bool Server::isNicknameInUse(const std::string &nickname) const {
+    for (std::map<int, Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        if (it->second->getNickname() == nickname)
+            return true;
+    }
+    return false;
+}

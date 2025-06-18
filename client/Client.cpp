@@ -40,11 +40,11 @@ void Client::removeChannel(const std::string& channelName) {
 		_joinedChannels.erase(it);
 }
 
-void Client::setDisconnected(bool value) 
-{ 
-	_shouldDisconnect = value; 
+void Client::setDisconnected(bool value)
+{
+	_shouldDisconnect = value;
 }
-bool Client::shouldDisconnect() const 
-{ 
-	return _shouldDisconnect; 
+bool Client::shouldDisconnect() const
+{
+	return _shouldDisconnect;
 }
