@@ -1,8 +1,19 @@
 #include "server/Server.hpp"
+#include <csignal>
 #include <iostream>
 #include <cstdlib>
 
+static Server* g_server = NULL;
+
+void handle_sigint(int) {
+    std::cout << "\nCaught SIGINT (Ctrl+C), cleaning up..." << std::endl;
+    delete g_server;  // destructor tetiklenir
+    std::exit(0);     // güvenli çıkış
+}
+
 int main(int argc, char **argv) {
+    std::signal(SIGINT, handle_sigint);
+
     if (argc != 3) {
         std::cerr << "Usage: ./ircserv <port> <password>" << std::endl;
         return 1;
@@ -12,10 +23,12 @@ int main(int argc, char **argv) {
     std::string password = argv[2];
 
     try {
-        Server ircServer(port, password);
-        ircServer.run();
+        g_server = new Server(port, password);
+        g_server->run();
+        delete g_server;  // normal kapanışta da çağrılsın
     } catch (const std::exception &e) {
         std::cerr << "Server error: " << e.what() << std::endl;
+        delete g_server;
         return 1;
     }
 

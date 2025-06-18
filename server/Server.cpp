@@ -29,6 +29,7 @@ Server::~Server() {
     _channels.clear();
 
     _pollFds.clear();
+    std::vector<struct pollfd>().swap(_pollFds);
     std::cout << "Server shutting down and memory cleaned." << std::endl;
 }
 
