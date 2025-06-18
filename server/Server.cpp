@@ -17,8 +17,22 @@ Server::Server(int port, const std::string &password)
 }
 
 Server::~Server() {
-    std::cout << "Server shutting down." << std::endl;
+    for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        close(it->first);
+        delete it->second;
+    }
+    _clients.clear();
+
+    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it) {
+        delete it->second;
+    }
+    _channels.clear();
+
+    _pollFds.clear();
+    std::cout << "Server shutting down and memory cleaned." << std::endl;
 }
+
+
 
 Channel* Server::getOrCreateChannel(const std::string &name) {
     if (_channels.find(name) == _channels.end()) {
@@ -127,9 +141,11 @@ void Server::addClient(int client_fd) {
 void Server::removeClient(int client_fd) {
     std::cout << "Client removed: " << client_fd << std::endl;
 
-    close(client_fd);
-    delete _clients[client_fd];
-    _clients.erase(client_fd);
+    if (_clients.count(client_fd)) {
+        close(client_fd);
+        delete _clients[client_fd];
+        _clients.erase(client_fd);
+    }
 
     for (std::vector<struct pollfd>::iterator it = _pollFds.begin(); it != _pollFds.end(); ++it) {
         if (it->fd == client_fd) {
@@ -138,6 +154,7 @@ void Server::removeClient(int client_fd) {
         }
     }
 }
+
 
 std::map<std::string, Channel*> &Server::getChannelMap() {
     return _channels;

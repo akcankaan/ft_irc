@@ -6,7 +6,12 @@
 Channel::Channel(const std::string &name)
     : _name(name), _inviteOnly(false), _userLimit(0), _hasUserLimit(false), topicRestrict(false){}
 
-Channel::~Channel() {}
+    Channel::~Channel() {
+        _clients.clear();
+        _invited.clear();
+        _operators.clear();
+    }
+
 
 const std::string &Channel::getName() const {
     return _name;

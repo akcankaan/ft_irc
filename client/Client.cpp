@@ -4,7 +4,15 @@
 
 Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _shouldDisconnect(false) {}
 
-Client::~Client() {}
+Client::~Client() {
+    _joinedChannels.clear();
+    _buffer.clear();
+    _nickname.clear();
+    _username.clear();
+    _realname.clear();
+    _hostname.clear();
+}
+
 
 int Client::getFd() const { return _fd; }
 
