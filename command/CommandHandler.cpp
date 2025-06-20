@@ -8,6 +8,23 @@ void CommandHandler::handleCommand(Client *client, const std::string &raw)
     std::istringstream iss(raw);
     std::string command;
     iss >> command;
+    if(client->isAuthenticated() == false)
+    {
+        if (command == "PASS")
+            password(client, iss);
+        else if (command == "NICK")
+            nick(client, iss);
+        else if (command == "USER")
+            user(client, iss);
+        else if (command == "QUIT")
+            quit(client, iss);
+        if(!client->getNickname().empty() && !client->getUsername().empty() && client->hasGivenPassword())
+        {
+
+            client->authenticate();
+        }
+        return;
+    }
     if (command == "PASS")
         password(client, iss);
     else if (command == "NICK")
