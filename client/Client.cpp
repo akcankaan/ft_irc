@@ -56,3 +56,8 @@ bool Client::shouldDisconnect() const
 {
 	return _shouldDisconnect;
 }
+
+const std::vector<std::string>& Client::getJoinedChannels() const {
+    return _joinedChannels;
+}
+
