@@ -5,7 +5,6 @@
 Client::Client(int fd) : _fd(fd), _isAuthenticated(false), _hasGivenPassword(false), _shouldDisconnect(false) {}
 
 Client::~Client() {
-    _joinedChannels.clear();
     _buffer.clear();
     _nickname.clear();
     _username.clear();
@@ -42,11 +41,6 @@ void Client::setServer(Server *server) { _server = server; }
 
 Server *Client::getServer() const { return _server; }
 
-void Client::removeChannel(const std::string& channelName) {
-	std::vector<std::string>::iterator it = std::find(_joinedChannels.begin(), _joinedChannels.end(), channelName);
-	if (it != _joinedChannels.end())
-		_joinedChannels.erase(it);
-}
 
 void Client::setDisconnected(bool value)
 {
@@ -56,8 +50,3 @@ bool Client::shouldDisconnect() const
 {
 	return _shouldDisconnect;
 }
-
-const std::vector<std::string>& Client::getJoinedChannels() const {
-    return _joinedChannels;
-}
-

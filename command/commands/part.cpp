@@ -52,7 +52,6 @@ void part(Client *client, std::istringstream &iss)
 	send(client->getFd(), partMsg.c_str(), partMsg.length(), 0);
 
 	channel->removeClient(client);
-	client->removeChannel(chanName);
 
 	if (wasOperator && !channel->getClients().empty())
 	{

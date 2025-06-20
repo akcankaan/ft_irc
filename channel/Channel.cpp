@@ -22,7 +22,15 @@ void Channel::addClient(Client *client) {
         _clients.push_back(client);
 
         if (_clients.size() == 1)
-            addOperator(client->getNickname());
+        {
+
+            Client *newOp = getClients()[0];
+			addOperator(newOp->getNickname());
+
+			std::string modeMsg = ":@localhost MODE " + _name +
+				" +o " + newOp->getNickname() + "\r\n";
+			broadcast(modeMsg, NULL);
+        }
     }
 }
 
@@ -53,6 +61,7 @@ static std::string buildKickMsg(Client *from, const std::string &channel, Client
 
 void Channel::removeClient(Client *client) {
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+        std::cout << "burada" << std::endl;
         if (*it == client) {
             _clients.erase(it);
             _operators.erase(client->getNickname());
@@ -60,6 +69,7 @@ void Channel::removeClient(Client *client) {
             break;
         }
     }
+
 }
 
 void Channel::kickClient(Client *by, Client *target, const std::string &reason) {

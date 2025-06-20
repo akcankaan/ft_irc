@@ -30,16 +30,19 @@ void quit(Client *client, std::istringstream &iss)
 	if (channels.find(chanName) == channels.end())
 	{
 		send(client->getFd(), "No such channel\r\n", 18, 0);
-		return;
 	}
 
-	Channel *channel = channels[chanName];
-	channel->removeClient(client);
+for (std::map<std::string, Channel*>::iterator it = channels.begin(); it != channels.end(); ++it) {
+        std::string quitMsg = ":" + client->getNickname() + "!" + client->getUsername() +
+		"@localhost QUIT :" + msg + "\r\n"; // IRC QUIT protokolüne daha uygun
 
-	std::string quitMsg = ":" + client->getNickname() + "!" + client->getUsername() +
-		"@localhost QUIT " + chanName + " :" + msg + "\r\n";
 
-	channel->broadcast(quitMsg, client);
+        Channel* channel = it->second; // Tek değişken ile çalış
+        channel->removeClient(client);
+        channel->broadcast(quitMsg, client);
+        break; // Bulduktan sonra çık
+}
+
 
 	std::cout << client->getNickname() << " exited from " << chanName << " channel" << std::endl;
 }

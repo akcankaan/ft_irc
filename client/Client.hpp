@@ -19,7 +19,6 @@ class Client {
 
         Server* _server;
 
-        std::vector<std::string> _joinedChannels;
         bool _shouldDisconnect;
 
 
@@ -38,17 +37,15 @@ class Client {
         void    appendBuffer(const std::string &data);
         void    clearBuffer();
         void    authenticate();
-        bool    hasGivenPassword() const;
-        void    markPasswordGiven();
+        bool hasGivenPassword() const;
+        void markPasswordGiven();
 
         void setServer(Server *server);
         Server *getServer() const;
 
-        void removeChannel(const std::string& channelName);
+        
         void setDisconnected(bool value);
         bool shouldDisconnect() const;
-        const std::vector<std::string>& getJoinedChannels() const;
-
 };
 
 #endif

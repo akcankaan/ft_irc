@@ -30,12 +30,5 @@ void nick(Client *client, std::istringstream &iss)
 
     send(client->getFd(), msg.c_str(), msg.length(), 0);
 
-    std::vector<std::string> joined = client->getJoinedChannels();
-    for (size_t i = 0; i < joined.size(); ++i) {
-        Channel* chan = server->getChannelMap()[joined[i]];
-        if (chan)
-            chan->broadcast(msg, NULL);
-    }
-
     std::cout << "[DEBUG] Nick change: " << oldNick << " -> " << nickname << std::endl;
 }

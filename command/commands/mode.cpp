@@ -133,6 +133,7 @@ void mode (Client *client, std::istringstream &iss)
 
         channel->addOperator(nickname);
 
+        // ✅ Mode mesajı komutu gönderen kişiden gelmeli
         modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost MODE " + chanName + " +o " + nickname + "\r\n";
         channel->broadcast(modeResponse, NULL);
     }

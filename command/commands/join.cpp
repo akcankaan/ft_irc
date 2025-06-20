@@ -74,7 +74,12 @@ void join(Client *client, std::istringstream &iss)
     const std::vector<Client*> &allClients = channel->getClients();
     std::string nameList = ":ircserv 353 " + client->getNickname() + " = " + chanName + " :";
     for (size_t i = 0; i < allClients.size(); ++i) {
-        nameList += allClients[i]->getNickname() + " ";
+		if (channel->isOperator(allClients[i]->getNickname()))
+			nameList += "@" + allClients[i]->getNickname();
+		else
+			nameList += allClients[i]->getNickname();
+		if (i + 1 < allClients.size())
+			nameList += " ";
     }
     nameList += "\r\n";
     send(client->getFd(), nameList.c_str(), nameList.length(), 0);
