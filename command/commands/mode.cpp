@@ -103,48 +103,38 @@ void mode (Client *client, std::istringstream &iss)
     } else if(modeStr == "+o"){
         std::string nickname;
         iss >> nickname;
-        if (iss.fail() || !iss.eof())
-        {
-            std::cout << "Wrong input." << std::endl;
-            std::string warning = ":@localhost 421 " + client->getNickname() +
-                    " :" + "Wrong input\r\n";
+
+        if (iss.fail() || !iss.eof()) {
+            std::string warning = ":@localhost 421 " + client->getNickname() + " :Wrong input\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);
             return;
         }
-        if(channel->isOperator(nickname))
-        {
-            std::cout << nickname << " : already operator" << std::endl;
-            std::string warning = ":@localhost 421 " + client->getNickname() +
-                    " :"+ nickname +" :already operator\r\n";
+
+        if(channel->isOperator(nickname)) {
+            std::string warning = ":@localhost 421 " + client->getNickname() + " :" + nickname + " :already operator\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);
-            return ;
+            return;
+        }
+
+        const std::vector<Client*> &clients = channel->getClients();
+        bool found = false;
+        for (size_t i = 0; i < clients.size(); ++i) {
+            if (clients[i] && clients[i]->getNickname() == nickname) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            std::string warning = ":@localhost 441 " + client->getNickname() + " " + nickname + " " + chanName + " :They aren't on that channel\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
         }
 
         channel->addOperator(nickname);
-        modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "+o\r\n";
-        channel->broadcast(modeResponse, NULL);
-    }else if(modeStr == "-o"){
-        std::string nickname;
-        iss >> nickname;
-        if (iss.fail() || !iss.eof())
-        {
-            std::cout << "Wrong input." << std::endl;
-            std::string warning = ":@localhost 421 " + client->getNickname() +
-                    " :" + "Wrong input\r\n";
-            send(client->getFd(), warning.c_str(), warning.length(), 0);
-            return;
-        }
-        if(!channel->isOperator(nickname))
-        {
-            std::cout << nickname << " : is not operator" << std::endl;
-            std::string warning = ":@localhost 421 " + client->getNickname() +
-                    " :"+ nickname +" :is not operator\r\n";
-            send(client->getFd(), warning.c_str(), warning.length(), 0);
-            return ;
-        }
 
-        channel->removeOperator(nickname);
-        modeResponse = ":" + nickname + "!" + nickname + "@localhost MODE " + chanName + " " + "-o\r\n";
+        // ✅ Mode mesajı komutu gönderen kişiden gelmeli
+        modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost MODE " + chanName + " +o " + nickname + "\r\n";
         channel->broadcast(modeResponse, NULL);
     }
     else

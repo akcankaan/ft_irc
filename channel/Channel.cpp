@@ -125,7 +125,21 @@ bool Channel::hasUserLimit() const { return _hasUserLimit; }
 
 bool Channel::isFull() const { return _hasUserLimit && static_cast<int>(_clients.size()) >= _userLimit; }
 
-void Channel::addOperator(std::string nickname) { _operators.insert(nickname); }
+void Channel::addOperator(std::string nickname) {
+    bool inChannel = false;
+    for (size_t i = 0; i < _clients.size(); ++i) {
+        if (_clients[i]->getNickname() == nickname) {
+            inChannel = true;
+            break;
+        }
+    }
+    if (!inChannel) {
+        std::cout << "User " << nickname << " is not in channel, cannot be made operator." << std::endl;
+        return;
+    }
+
+    _operators.insert(nickname);
+}
 
 void Channel::removeOperator(std::string nickname) { _operators.erase(nickname); }
 
