@@ -73,53 +73,77 @@ void Server::run() {
     struct pollfd serverPollFd = { _serverSocket, POLLIN, 0 };
     _pollFds.push_back(serverPollFd);
 
-    while (true) {
-        int pollResult = poll(&_pollFds[0], _pollFds.size(), -1);
-        if (pollResult < 0)
-            throw std::runtime_error("Poll failed");
+   while (true) {
+    int pollResult = poll(&_pollFds[0], _pollFds.size(), -1);
+    if (pollResult < 0)
+        throw std::runtime_error("Poll failed");
 
-        for (size_t i = 0; i < _pollFds.size(); ++i) {
-            int fd = _pollFds[i].fd;
+   
+    for (size_t i = 0; i < _pollFds.size(); ) {
+        int fd = _pollFds[i].fd;
 
-            if (_pollFds[i].revents & POLLIN) {
-                if (fd == _serverSocket) {
-                    sockaddr_in client_addr;
-                    socklen_t client_len = sizeof(client_addr);
-                    int client_fd = accept(_serverSocket, (sockaddr *)&client_addr, &client_len);
-                    if (client_fd >= 0)
-                        addClient(client_fd);
+        if (_pollFds[i].revents & POLLIN) {
+            if (fd == _serverSocket) {
+                sockaddr_in client_addr;
+                socklen_t client_len = sizeof(client_addr);
+                int client_fd = accept(_serverSocket, (sockaddr *)&client_addr, &client_len);
+                if (client_fd >= 0)
+                    addClient(client_fd);
+                ++i;
+            } else {
+                char buffer[512];
+                std::memset(buffer, 0, sizeof(buffer));
+                ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0);
+
+                if (bytes <= 0) {
+                    removeClient(fd);
+                    continue;
                 }
-                else {
-                    char buffer[512];
-                    std::memset(buffer, 0, sizeof(buffer));
-                    ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0);
 
-                    if (bytes <= 0) {
-                        removeClient(fd);
-                    } else {
-                        Client *client = _clients[fd];
-                        client->appendBuffer(std::string(buffer, bytes));
+                std::map<int, Client*>::iterator clientIt = _clients.find(fd);
+                if (clientIt == _clients.end()) {
+                    continue;
+                }
+                Client *client = clientIt->second;
+                client->appendBuffer(std::string(buffer, bytes));
 
-                        size_t pos;
-                        std::string &full = const_cast<std::string&>(client->getBuffer());
-                        while ((pos = full.find("\n")) != std::string::npos) {
-                            std::string line = full.substr(0, pos);
-                            if (!line.empty() && line[line.size() - 1] == '\r')
-                                line.erase(line.size() - 1);
-                            CommandHandler::handleCommand(client, line);
-                            if (client->shouldDisconnect()) {
-                                full.erase(0, pos + 1);
-                                break;
-                            }
-                            full.erase(0, pos + 1);
-                        }
+                size_t pos;
+                std::string &full = const_cast<std::string&>(client->getBuffer());
+                bool clientRemoved = false;
+
+                
+                while ((pos = full.find("\n")) != std::string::npos) {
+                    std::string line = full.substr(0, pos);
+                    if (!line.empty() && line[line.size() - 1] == '\r')
+                        line.erase(line.size() - 1);
+                    CommandHandler::handleCommand(client, line);
+
+                    
+                    if (_clients.find(fd) == _clients.end()) {
+                        clientRemoved = true;
+                        break;
                     }
+
+                    if (client->shouldDisconnect()) {
+                        full.erase(0, pos + 1);
+                        removeClient(fd); 
+                        clientRemoved = true;
+                        break;
+                    }
+                    full.erase(0, pos + 1);
                 }
+
+                if (clientRemoved) {
+                    continue;
+                }
+                ++i;
             }
+        } else {
+            ++i; 
         }
     }
-
-    close(_serverSocket);
+}
+close(_serverSocket);
 }
 
 void Server::addClient(int client_fd) {

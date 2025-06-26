@@ -10,8 +10,8 @@
 
 void quit(Client *client, std::istringstream &iss)
 {
-    std::string dummy; // Artık tek bir kanal adı değil, quit mesajı parse edilecek
-    iss >> dummy; // Çoğu zaman boş gelir
+    std::string dummy; 
+    iss >> dummy;
 
     std::string msg;
     std::getline(iss, msg);
@@ -32,7 +32,7 @@ void quit(Client *client, std::istringstream &iss)
     std::string quitMsg = ":" + client->getNickname() + "!" + client->getUsername() +
                           "@localhost QUIT :" + msg + "\r\n";
 
-    // Kullanıcının içinde bulunduğu tüm kanalları bul
+
     std::vector<Channel*> userChannels;
     for (std::map<std::string, Channel *>::iterator it = channels.begin(); it != channels.end(); ++it)
     {
@@ -49,16 +49,13 @@ void quit(Client *client, std::istringstream &iss)
 
         bool wasOperator = channel->isOperator(client->getNickname());
 
-        // Client'ı kanaldan sil
         channel->removeClient(client);
 
-        // QUIT mesajı
         channel->broadcast(quitMsg, client);
 
-        // Eğer çıkan kullanıcı operator ise ve kanalda başka kullanıcı varsa
         if (wasOperator && !channel->getClients().empty())
         {
-            // Son giren kullanıcıyı bul (en sondaki)
+
             Client* newOp = channel->getClients().back();
             channel->addOperator(newOp->getNickname());
 
@@ -70,7 +67,5 @@ void quit(Client *client, std::istringstream &iss)
         std::cout << client->getNickname() << " exited from " << chanName << " channel" << std::endl;
     }
 
-    // Server'dan çıkarma işlemleri (isteğe bağlı, aşağıdaki satırı kendi sistemine göre düzenle)
-    server->removeClient(client->getFd()); // Böyle bir fonksiyonun varsa kullanırsın.
-
+    server->removeClient(client->getFd()); 
 }
