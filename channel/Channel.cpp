@@ -12,7 +12,6 @@ Channel::~Channel() {
         _operators.clear();
 }
 
-
 const std::string &Channel::getName() const {
     return _name;
 }

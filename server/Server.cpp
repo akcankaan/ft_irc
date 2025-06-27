@@ -33,8 +33,6 @@ Server::~Server() {
     std::cout << "\nServer shutting down and memory cleaned." << std::endl;
 }
 
-
-
 Channel* Server::getOrCreateChannel(const std::string &name) {
     if (_channels.find(name) == _channels.end()) {
         _channels[name] = new Channel(name);
@@ -77,7 +75,6 @@ void Server::run() {
     int pollResult = poll(&_pollFds[0], _pollFds.size(), -1);
     if (pollResult < 0)
         throw std::runtime_error("Poll failed");
-
 
     for (size_t i = 0; i < _pollFds.size(); ) {
         int fd = _pollFds[i].fd;
