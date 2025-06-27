@@ -14,7 +14,6 @@ void invite (Client *client, std::istringstream &iss)
         return;
     if (nick.empty() && chanName.empty())
     {
-        std::cout << "INVITE syntax: INVITE <nick> <#channel>" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +
                   " :INVITE syntax: INVITE <nick> <#channel>\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -25,7 +24,6 @@ void invite (Client *client, std::istringstream &iss)
     Channel *channel = server->getChannelMap()[chanName];
     if (!channel)
     {
-        std::cout << "Channel not found" << std::endl;
         std::string warning = ":@localhost 403 " + client->getNickname() +
                   " :Channel not found\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -34,7 +32,6 @@ void invite (Client *client, std::istringstream &iss)
 
     if (!channel->isOperator(client->getNickname()))
     {
-        std::cout << "You are not channel operator" << std::endl;
         std::string warning = ":@localhost 481 " + client->getNickname() +
                   " :You are not channel operator\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -61,5 +58,4 @@ void invite (Client *client, std::istringstream &iss)
     const char *msg = "User invited\r\n";
     send(client->getFd(), msg, strlen(msg), 0);
 
-    std::cout << "Client " << client->getFd() << " invited " << nick << " to " << chanName << std::endl;
 }

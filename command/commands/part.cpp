@@ -78,6 +78,8 @@ void part(Client *client, std::istringstream &iss)
 		}
 	}
 
-	if (channel->getClients().empty())
-		channels.erase(chanName);
+	if (channel->getClients().empty()) {
+    	delete channel;
+    	channels.erase(chanName);
+	}
 }

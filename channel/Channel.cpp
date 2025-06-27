@@ -61,7 +61,6 @@ static std::string buildKickMsg(Client *from, const std::string &channel, Client
 
 void Channel::removeClient(Client *client) {
     for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
-        std::cout << "burada" << std::endl;
         if (*it == client) {
             _clients.erase(it);
             _operators.erase(client->getNickname());
@@ -144,7 +143,6 @@ void Channel::addOperator(std::string nickname) {
         }
     }
     if (!inChannel) {
-        std::cout << "User " << nickname << " is not in channel, cannot be made operator." << std::endl;
         return;
     }
 
@@ -174,4 +172,8 @@ bool Channel::isClientInChannel(Client *client) const
 			return true;
 	}
 	return false;
+}
+
+size_t Channel::operatorCount() const {
+    return _operators.size();
 }

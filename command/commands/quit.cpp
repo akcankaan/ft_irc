@@ -10,7 +10,7 @@
 
 void quit(Client *client, std::istringstream &iss)
 {
-    std::string dummy; 
+    std::string dummy;
     iss >> dummy;
 
     std::string msg;
@@ -64,8 +64,7 @@ void quit(Client *client, std::istringstream &iss)
             channel->broadcast(modeMsg, NULL);
         }
 
-        std::cout << client->getNickname() << " exited from " << chanName << " channel" << std::endl;
     }
 
-    server->removeClient(client->getFd()); 
+    server->removeClient(client->getFd());
 }

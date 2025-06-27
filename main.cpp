@@ -6,7 +6,6 @@
 static Server* g_server = NULL;
 
 void handle_sigint(int) {
-    std::cout << "\nCaught SIGINT (Ctrl+C), cleaning up..." << std::endl;
     delete g_server;
     std::exit(0);
 }

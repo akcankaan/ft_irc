@@ -9,5 +9,4 @@ void user(Client *client, std::istringstream &iss)
     if (client->shouldDisconnect())
         return;
     client->setUsername(username);
-    std::cout << "Client " << client->getFd() << " set username to " << username << std::endl;
 }

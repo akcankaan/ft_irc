@@ -21,7 +21,7 @@ void nick(Client *client, std::istringstream &iss)
 
     if (nickname == client->getNickname())
         return;
-    
+
     size_t len = nickname.size();
     if (len < 2 || len > 9)
     {
@@ -89,7 +89,6 @@ void nick(Client *client, std::istringstream &iss)
         Channel* channel = userChannels[i];
         std::string chanName = channel->getName();
         bool wasOperator = channel->isOperator(oldNick);
-        std::cout << wasOperator << std::endl;
         if (wasOperator)
         {
             channel->removeOperator(oldNick);

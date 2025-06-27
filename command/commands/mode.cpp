@@ -15,7 +15,6 @@ void mode (Client *client, std::istringstream &iss)
         return;
     if (chanName.empty() && modeStr.empty())
     {
-        std::cout << "Usage: MODE <#channel> [+/-mode] [param]" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +
                 " :Usage: MODE <#channel> [+/-mode] [param]\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -27,7 +26,6 @@ void mode (Client *client, std::istringstream &iss)
 
     if (channels.find(chanName) == channels.end())
     {
-        std::cout << "Channel not found" << std::endl;
         std::string warning = ":@localhost 403 " + client->getNickname() +
                 " :Channel not found\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -38,7 +36,6 @@ void mode (Client *client, std::istringstream &iss)
 
     if (!channel->isOperator(client->getNickname()))
     {
-        std::cout << "You are not channel operator" << std::endl;
         std::string warning = ":@localhost 482 " + client->getNickname() +
                 " :You are not channel operator\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -68,7 +65,6 @@ void mode (Client *client, std::istringstream &iss)
         iss >> param;
         if (param.empty())
         {
-            std::cout << "Password required for +k" << std::endl;
             std::string warning = ":@localhost 421 " + client->getNickname() +
                     " :Password required for +k\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -86,7 +82,6 @@ void mode (Client *client, std::istringstream &iss)
         iss >> param;
         if (param.empty())
         {
-            std::cout << "User limit required for +l" << std::endl;
             std::string warning = ":@localhost 421 " + client->getNickname() +
                     " :User limit required for +l\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -133,18 +128,56 @@ void mode (Client *client, std::istringstream &iss)
 
         channel->addOperator(nickname);
 
-        // ✅ Mode mesajı komutu gönderen kişiden gelmeli
         modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost MODE " + chanName + " +o " + nickname + "\r\n";
+        channel->broadcast(modeResponse, NULL);
+    }else if (modeStr == "-o") {
+        std::string nickname;
+        iss >> nickname;
+
+        if (iss.fail() || !iss.eof()) {
+            std::string warning = ":@localhost 421 " + client->getNickname() + " :Wrong input\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
+
+        if (!channel->isOperator(nickname)) {
+            std::string warning = ":@localhost 482 " + client->getNickname() + " " + chanName + " :They are not channel operator\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
+
+        const std::vector<Client*> &clients = channel->getClients();
+        bool found = false;
+        for (size_t i = 0; i < clients.size(); ++i) {
+            if (clients[i] && clients[i]->getNickname() == nickname) {
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            std::string warning = ":@localhost 441 " + client->getNickname() + " " + nickname + " " + chanName + " :They aren't on that channel\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
+
+        if (channel->operatorCount() <= 1) {
+            std::string warning = ":@localhost 482 " + client->getNickname() + " " + chanName + " :Cannot remove the last operator\r\n";
+            send(client->getFd(), warning.c_str(), warning.length(), 0);
+            return;
+        }
+
+        channel->removeOperator(nickname);
+
+        std::string modeResponse = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost MODE " + chanName + " -o " + nickname + "\r\n";
         channel->broadcast(modeResponse, NULL);
     }
     else
     {
-        std::cout << "Unknown mode" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +
             " :Unknown mode\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
         return;
     }
 
-    std::cout << "Client " << client->getFd() << " set mode " << modeStr << " on " << chanName << std::endl;
 }

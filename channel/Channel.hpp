@@ -56,6 +56,7 @@ class Channel {
         bool isTopicRestricted() const;
         const std::vector<Client*> &getClients() const;
         bool isClientInChannel(Client *client) const;
+        size_t operatorCount() const;
 
 };
 

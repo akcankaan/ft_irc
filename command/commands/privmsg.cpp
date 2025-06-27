@@ -19,7 +19,6 @@ void privmsg(Client *client, std::istringstream &iss)
         message.erase(0, 1);
 
     if (target.empty() || message.empty()) {
-        std::cout << "Client " << client->getFd() << " sent invalid PRIVMSG." << std::endl;
         return;
     }
 
@@ -27,7 +26,6 @@ void privmsg(Client *client, std::istringstream &iss)
     std::map<std::string, Channel*> &channels = server->getChannelMap();
 
     if (channels.find(target) == channels.end()) {
-        std::cout << "Channel not found: " << target << std::endl;
         return;
     }
 
@@ -39,5 +37,4 @@ void privmsg(Client *client, std::istringstream &iss)
     std::string fullMessage = ":" + client->getNickname() + "!" + client->getUsername() + "@localhost PRIVMSG " + target + " :" + message + "\r\n";
     channel->broadcast(fullMessage, client);
 
-    std::cout << "Client " << client->getFd() << " sent to " << target << ": " << message << std::endl;
 }

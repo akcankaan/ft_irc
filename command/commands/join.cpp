@@ -14,7 +14,6 @@ void join(Client *client, std::istringstream &iss)
         return;
     if (chanName.empty() || chanName[0] != '#')
     {
-        std::cout << "Invalid channel name" << std::endl;
         std::string warning = ":@localhost 421 " + client->getNickname() +
                   " :Invalid channel name\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -26,7 +25,6 @@ void join(Client *client, std::istringstream &iss)
 
     if (channel->isInviteOnly() && !channel->isInvited(client))
     {
-        std::cout << "Channel is invite-only" << std::endl;
         std::string warning = ":@localhost 473 " + client->getNickname() +
                   " :Channel is invite-only\r\n";
         send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -39,7 +37,6 @@ void join(Client *client, std::istringstream &iss)
     {
         if (joinPassword != channel->getPassword())
         {
-            std::cout << "Incorrect channel password" << std::endl;
             std::string warning = ":@localhost 475 " + client->getNickname() +
                   " :Incorrect channel password\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);
@@ -49,7 +46,6 @@ void join(Client *client, std::istringstream &iss)
 
     if (channel->isFull())
     {
-        std::cout << "Channel is full" << std::endl;
         std::string warning = ":@localhost 471 " + client->getNickname() +
                   " :Channel is full\r\n";
             send(client->getFd(), warning.c_str(), warning.length(), 0);

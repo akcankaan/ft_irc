@@ -30,7 +30,7 @@ Server::~Server() {
 
     _pollFds.clear();
     std::vector<struct pollfd>().swap(_pollFds);
-    std::cout << "Server shutting down and memory cleaned." << std::endl;
+    std::cout << "\nServer shutting down and memory cleaned." << std::endl;
 }
 
 
@@ -78,7 +78,7 @@ void Server::run() {
     if (pollResult < 0)
         throw std::runtime_error("Poll failed");
 
-   
+
     for (size_t i = 0; i < _pollFds.size(); ) {
         int fd = _pollFds[i].fd;
 
@@ -111,14 +111,14 @@ void Server::run() {
                 std::string &full = const_cast<std::string&>(client->getBuffer());
                 bool clientRemoved = false;
 
-                
+
                 while ((pos = full.find("\n")) != std::string::npos) {
                     std::string line = full.substr(0, pos);
                     if (!line.empty() && line[line.size() - 1] == '\r')
                         line.erase(line.size() - 1);
                     CommandHandler::handleCommand(client, line);
 
-                    
+
                     if (_clients.find(fd) == _clients.end()) {
                         clientRemoved = true;
                         break;
@@ -126,7 +126,7 @@ void Server::run() {
 
                     if (client->shouldDisconnect()) {
                         full.erase(0, pos + 1);
-                        removeClient(fd); 
+                        removeClient(fd);
                         clientRemoved = true;
                         break;
                     }
@@ -139,7 +139,7 @@ void Server::run() {
                 ++i;
             }
         } else {
-            ++i; 
+            ++i;
         }
     }
 }
